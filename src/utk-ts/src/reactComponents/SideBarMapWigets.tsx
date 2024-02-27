@@ -90,7 +90,7 @@ export const SideBarMapWidgets = ({x, y, mapWidth, mapHeight, listLayers, knotVi
     return (
         <React.Fragment>
           {
-              colorScales.map((colorScaleInfo: {range: number[], domain: number[], cmap: string, id: string, scale: string, visible: boolean}) => (
+              colorScales.map((colorScaleInfo: {range: number[], domain: number[], cmap: string, id: string, scale: string, visible: boolean}, index: number) => (
                   <ColorScaleContainer 
                       id={colorScaleInfo.id}
                       x={20}
@@ -100,6 +100,8 @@ export const SideBarMapWidgets = ({x, y, mapWidth, mapHeight, listLayers, knotVi
                       cmap={colorScaleInfo.cmap}
                       scale={colorScaleInfo.scale}
                       disp={colorScaleInfo.visible}
+                      keyValue={index}
+                      key={"colorScaleContainer_"+index}
                   />
               ))
           }

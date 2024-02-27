@@ -5,7 +5,6 @@ import { PlotArrangementType, OperationType, SpatialRelationType, LevelType, Com
 import { Knot } from './knot';
 import { MapViewFactory } from './mapview';
 import { Environment } from './environment';
-import { DataLoader } from './data-loader';
 import { MapRendererContainer } from './reactComponents/MapRenderer';
 
 import React, { ComponentType } from 'react';
@@ -89,7 +88,7 @@ class GrammarInterpreter {
         this._mainDiv = mainDiv;
         this.processGrammar(grammar);
     }
-
+ 
     /**
      * inits the window events
      */
@@ -98,7 +97,7 @@ class GrammarInterpreter {
         const resizeHandler = (event: any) => {
             for(const component of this._components){
                 if(component.type == ComponentIdentifier.MAP){
-                    component.obj.resize();
+                    component.obj.render();
                 }
             }
 
@@ -177,6 +176,7 @@ class GrammarInterpreter {
 
         if(!valid){
             for(const error of validate.errors){
+
                 alert("Invalid grammar: "+error.message+"at "+error.dataPath);
             }
 
@@ -276,14 +276,14 @@ class GrammarInterpreter {
             let processedGrammar = JSON.parse(aux);
             this._grammar = processedGrammar;
 
-            await this.createSpatialJoins(this._url, processedGrammar);
+            if(!Environment.serverless)
+                await this.createSpatialJoins(this._url, processedGrammar);
 
             Environment.setEnvironment({backend: `http://localhost:5001` as string});
             
             for(const component of grammar.components){
-                const url = `${Environment.backend}/files/${component.id}.json`;
 
-                let component_grammar = <IMapGrammar | IPlotGrammar> await DataLoader.getJsonData(url);
+                let component_grammar = <IMapGrammar | IPlotGrammar> await DataApi.getComponentData(component.id);
 
                 this.updateComponentGrammar(component_grammar, component);
             }

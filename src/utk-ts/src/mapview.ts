@@ -349,6 +349,8 @@ class MapView {
         // no camera defined
         if (!this._camera) { return; }
 
+        this.resize(); // check if it needs to resize canvas
+
         // sky definition
         const sky = MapStyle.getColor('sky').concat([1.0]);
         this._glContext.clearColor(sky[0], sky[1], sky[2], sky[3]);
@@ -423,33 +425,61 @@ class MapView {
      */
     resize(): void {
 
-        const targetWidth = this._mapDiv.clientWidth;
-        const targetHeight = this._mapDiv.clientHeight;
+        // Lookup the size the browser is displaying the canvas in CSS pixels.
+        const displayWidth = this._canvas.clientWidth;
+        const displayHeight = this._canvas.clientHeight;
 
-        const value = Math.max(targetWidth, targetHeight);
-        // this._glContext.viewport(0, 0, value, value);
-        this._glContext.viewport(0, 0, targetWidth, targetHeight);
-        this._canvas.width = targetWidth;
-        this._canvas.height = targetHeight;
+        // Check if the canvas is not the same size.
+        const needResize = this._canvas.width  !== displayWidth ||
+                            this._canvas.height !== displayHeight;
 
-        // stores in the camera
-        this._camera.setViewportResolution(targetWidth, targetHeight);
+        if (needResize) {
+            // Make the canvas the same size
+            this._canvas.width  = displayWidth;
+            this._canvas.height = displayHeight;
+        }
+
+        this._glContext.viewport(0, 0, this._canvas.width, this._canvas.width);
+        this._camera.setViewportResolution(this._canvas.width, this._canvas.height);
 
         for (const knot of this._knotManager.knots){
             if (!knot.visible) { continue; }
 
             for(const shader of knot.shaders[this._viewId]){
-                if(shader instanceof ShaderPicking){
-                    shader.resizeDirty = true;
-                }
-
-                if(shader instanceof ShaderPickingTriangles){
+                if(shader instanceof ShaderPicking || shader instanceof ShaderPickingTriangles){
                     shader.resizeDirty = true;
                 }
             }
         }
 
-        this.render();            
+        // this.render();   
+
+        // ============================
+
+        // const targetWidth = this._mapDiv.clientWidth;
+        // const targetHeight = this._mapDiv.clientHeight;
+
+        // // const value = Math.max(targetWidth, targetHeight);
+        // // this._glContext.viewport(0, 0, value, value);
+
+        // this._glContext.viewport(0, 0, targetWidth, targetHeight);
+        // this._canvas.width = targetWidth;
+        // this._canvas.height = targetHeight;
+
+        // // stores in the camera
+        // this._camera.setViewportResolution(targetWidth, targetHeight);
+
+        // for (const knot of this._knotManager.knots){
+        //     if (!knot.visible) { continue; }
+
+        //     for(const shader of knot.shaders[this._viewId]){
+        //         if(shader instanceof ShaderPicking || shader instanceof ShaderPickingTriangles){
+        //             shader.resizeDirty = true;
+        //         }
+        //     }
+        // }
+
+        // this.render();            
     }
 }
 

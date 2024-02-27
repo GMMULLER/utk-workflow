@@ -1,6 +1,7 @@
 export class Environment {
   // App environment parameters
   public static backend = 'http://localhost:5001';
+  public static serverless = false;
   // public static dataFolder = '../data'
 
   /**
