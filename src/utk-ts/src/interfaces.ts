@@ -7,9 +7,21 @@ export interface IMasterGrammar {
     variables?: {name: string, value: string}[], 
     components: (IComponent)[],
     knots: IKnot[],
+    ex_knots?: IExKnot[], // external precomputed knots
     grid: IGrid,
     grammar: boolean,
     grammar_position?: IComponentPosition
+}
+
+export interface IExKnot{
+    id: string,
+    out_name: string;
+    in_name?: string;
+    group?: IKnotGroup;
+    color_map?: string | IConditionBlock;
+    range?: number[];
+    domain?: number[];
+    scale?: string;
 }
 
 /**
@@ -25,6 +37,12 @@ export interface IMapGrammar {
     knotVisibility?: IKnotVisibility[],
     widgets?: IGenericWidget[],
     grammar_type: GrammarType
+}
+
+export interface IExternalJoinedJson {
+    id: string; // layer id
+    incomingId: string[]; // all layers attached to this one
+    inValues: number[][][]; // each position store the values for that incoming layer. Inside each position stores a timestep. 
 }
 
 /**

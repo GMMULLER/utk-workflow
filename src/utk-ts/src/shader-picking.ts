@@ -9,7 +9,7 @@ import vsPicking from './shaders/picking.vs';
 import fsPicking from './shaders/picking.fs';
 import { AuxiliaryShader } from "./auxiliaryShader";
 
-import { IKnot } from "./interfaces";
+import { IExKnot, IKnot } from "./interfaces";
 
 /**
  * This shader should only be used with the buildings layer
@@ -508,7 +508,7 @@ export class ShaderPicking extends Shader {
         this._auxiliaryShader.setPickedCells(this._pickedCells);
     }
 
-    public updateShaderData(mesh: Mesh, knot: IKnot, currentTimestepFunction: number = 0): void {
+    public updateShaderData(mesh: Mesh, knot: IKnot | IExKnot, currentTimestepFunction: number = 0): void {
         return;
     }
 

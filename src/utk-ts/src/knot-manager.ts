@@ -1,4 +1,4 @@
-import { IKnot } from "./interfaces";
+import { IExKnot, IKnot } from "./interfaces";
 import { Knot } from "./knot";
 import { Layer } from "./layer";
 
@@ -16,7 +16,7 @@ export class KnotManager {
         return this._knots;
     }
 
-    createKnot(id: string, physicalLayer: Layer, knotSpecification: IKnot, grammarInterpreter: any, visible: boolean): Knot {
+    createKnot(id: string, physicalLayer: Layer, knotSpecification: IKnot | IExKnot, grammarInterpreter: any, visible: boolean): Knot {
         
         let knot = new Knot(id, physicalLayer, knotSpecification, grammarInterpreter, visible);
         this._knots.push(knot);

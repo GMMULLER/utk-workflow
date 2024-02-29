@@ -1,5 +1,5 @@
 import { OperationType, LevelType, RenderStyle } from "./constants";
-import { ILayerData, ILayerFeature, IKnot } from "./interfaces";
+import { ILayerData, ILayerFeature, IKnot, IExKnot } from "./interfaces";
 import { Layer } from "./layer";
 import { ShaderFlatColor } from "./shader-flatColor";
 import { Shader } from "./shader";
@@ -66,7 +66,7 @@ export class PointsLayer extends Layer {
         this._mesh.loadFunctionData(distributedValues, knotId);
     }
 
-    updateFunction(knot: IKnot, shaders: (Shader|AuxiliaryShader)[]): void {
+    updateFunction(knot: IKnot | IExKnot, shaders: (Shader|AuxiliaryShader)[]): void {
         // updates the shader references
         for (const shader of shaders) {
             shader.updateShaderData(this._mesh, knot);

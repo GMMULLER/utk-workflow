@@ -1,6 +1,6 @@
 /// <reference types="@types/webgl2" />
 
-import { ICameraData, IConditionBlock, IMasterGrammar, IKnotVisibility, IKnot, IMapGrammar, IPlotGrammar, IComponentPosition, IGenericWidget, ILayerData } from './interfaces';
+import { ICameraData, IConditionBlock, IMasterGrammar, IKnotVisibility, IKnot, IMapGrammar, IPlotGrammar, IComponentPosition, IGenericWidget, ILayerData, IExKnot, ILinkDescription } from './interfaces';
 import { PlotArrangementType, OperationType, SpatialRelationType, LevelType, ComponentIdentifier, WidgetType, GrammarType} from './constants';
 import { Knot } from './knot';
 import { MapViewFactory } from './mapview';
@@ -187,52 +187,53 @@ class GrammarInterpreter {
 
         let allKnotsIds: string[] = [];
     
-        for(const knot of grammar.knots){
-            if(allKnotsIds.includes(knot.id)){
-                throw Error("Duplicated knot id");
-            }else{
-                if(knot.knot_op != true)
-                    allKnotsIds.push(knot.id);
-            }
-        }
-
-        for(const knot of grammar.knots){
-            if(knot.knot_op == true){
-                for(const integration_scheme of knot.integration_scheme){
-
-                    let operation = integration_scheme.operation;
-
-                    if(operation != OperationType.NONE){
-                        throw Error("All operation for knots with knot_op = true should be NONE");
-                    }
+        if(!Environment.serverless){
+            for(const knot of grammar.knots){
+                if(allKnotsIds.includes(knot.id)){
+                    throw Error("Duplicated knot id");
+                }else{
+                    if(knot.knot_op != true)
+                        allKnotsIds.push(knot.id);
                 }
-                
-                for(const scheme of knot.integration_scheme){
+            }
+    
+            for(const knot of grammar.knots){
+                if(knot.knot_op == true){
+                    for(const integration_scheme of knot.integration_scheme){
+    
+                        let operation = integration_scheme.operation;
+    
+                        if(operation != OperationType.NONE){
+                            throw Error("All operation for knots with knot_op = true should be NONE");
+                        }
+                    }
                     
-                    if(scheme.in == undefined){
-                        throw Error("in must be defined when knot_op = true");
+                    for(const scheme of knot.integration_scheme){
+                        
+                        if(scheme.in == undefined){
+                            throw Error("in must be defined when knot_op = true");
+                        }
+    
+                        if(!allKnotsIds.includes(scheme.out.name) || !allKnotsIds.includes(scheme.in.name)){
+                            throw Error("When using knot_op out and in must make reference to the id of other knots (that doesnt have knot_op = true)");
+                        }
+    
+                        if(scheme.op == undefined){
+                            throw Error("If knot_op = true each step of the integration_scheme must have a defined op");
+                        }
+    
+                        if((scheme.maxDistance != undefined || scheme.defaultValue != undefined) && (scheme.spatial_relation != "NEAREST" || scheme.abstract != true)){
+                            throw Error("The maxDistance and defaultValue fields can only be used with the NEAREST spatial_relation in abstract links");
+                        }
+    
+                        if(scheme.maxDistance != undefined && scheme.defaultValue == undefined){
+                            throw Error("If maxDistance is used defaultValue must be specified")
+                        }
+    
                     }
-
-                    if(!allKnotsIds.includes(scheme.out.name) || !allKnotsIds.includes(scheme.in.name)){
-                        throw Error("When using knot_op out and in must make reference to the id of other knots (that doesnt have knot_op = true)");
-                    }
-
-                    if(scheme.op == undefined){
-                        throw Error("If knot_op = true each step of the integration_scheme must have a defined op");
-                    }
-
-                    if((scheme.maxDistance != undefined || scheme.defaultValue != undefined) && (scheme.spatial_relation != "NEAREST" || scheme.abstract != true)){
-                        throw Error("The maxDistance and defaultValue fields can only be used with the NEAREST spatial_relation in abstract links");
-                    }
-
-                    if(scheme.maxDistance != undefined && scheme.defaultValue == undefined){
-                        throw Error("If maxDistance is used defaultValue must be specified")
-                    }
-
+    
                 }
-
             }
-
         }
     
         return true;
@@ -331,15 +332,34 @@ class GrammarInterpreter {
     }
 
     initKnots(){
-        for(const knotGrammar of this.getKnots()){
-            let layerId = this.getKnotOutputLayer(knotGrammar);
-            let layer = this._layerManager.searchByLayerId(layerId);
-            let knot = this._knotManager.createKnot(knotGrammar.id, <Layer>layer, knotGrammar, this, true);
-            knot.processThematicData(this._layerManager); // send thematic data to the mesh of the physical layer TODO: put this inside the constructor of Knot
-            for(let i = 0; i < this._components_grammar.length; i++){
-                if(this._components_grammar[i].grammar != undefined && this._components_grammar[i].grammar?.grammar_type == GrammarType.MAP){
-                    let mapview = MapViewFactory.getInstance(this, this._layerManager, this._knotManager, i) // TODO: have different map intances for each component not a singleton
-                    knot.loadShaders(mapview.glContext, mapview.camera.getWorldOrigin(), i); // instantiate the shaders inside the knot
+        if(!Environment.serverless){
+            for(const knotGrammar of this.getKnots()){
+                let layerId = this.getKnotOutputLayer(knotGrammar);
+                let layer = this._layerManager.searchByLayerId(layerId);
+                let knot = this._knotManager.createKnot(knotGrammar.id, <Layer>layer, knotGrammar, this, true);
+                knot.processThematicData(this._layerManager); // send thematic data to the mesh of the physical layer TODO: put this inside the constructor of Knot
+                for(let i = 0; i < this._components_grammar.length; i++){
+                    if(this._components_grammar[i].grammar != undefined && this._components_grammar[i].grammar?.grammar_type == GrammarType.MAP){
+                        let mapview = MapViewFactory.getInstance(this, this._layerManager, this._knotManager, i) // TODO: have different map intances for each component not a singleton
+                        knot.loadShaders(mapview.glContext, mapview.camera.getWorldOrigin(), i); // instantiate the shaders inside the knot
+                    }
+                }
+            }
+        }else{
+            let premadeKnots = this.getPremadeKnots();
+
+            if(premadeKnots != undefined){
+                for(const premadeKnot of premadeKnots){
+                    let layerId = premadeKnot.out_name;
+                    let layer = this._layerManager.searchByLayerId(layerId);
+                    let knot = this._knotManager.createKnot(premadeKnot.id, <Layer>layer, premadeKnot, this, true);
+                    knot.processThematicData(this._layerManager); // send thematic data to the mesh of the physical layer TODO: put this inside the constructor of Knot
+                    for(let i = 0; i < this._components_grammar.length; i++){
+                        if(this._components_grammar[i].grammar != undefined && this._components_grammar[i].grammar?.grammar_type == GrammarType.MAP){
+                            let mapview = MapViewFactory.getInstance(this, this._layerManager, this._knotManager, i) // TODO: have different map intances for each component not a singleton
+                            knot.loadShaders(mapview.glContext, mapview.camera.getWorldOrigin(), i); // instantiate the shaders inside the knot
+                        }
+                    }
                 }
             }
         }
@@ -376,38 +396,64 @@ class GrammarInterpreter {
         let joinedList: boolean[] = [];
         // let centroid = this.camera.getWorldOrigin();
 
-        for(const knot of this.getKnots()){
-            if(!knot.knot_op){
-                // load layers from knots if they dont already exist
-                for(let i = 0; i < knot.integration_scheme.length; i++){
-
-                    let joined = false // if the layers was joined with another layer
-
-                    if(knot.integration_scheme[i].in != undefined && knot.integration_scheme[i].in?.name != knot.integration_scheme[i].out.name){
-                        joined = true;
-                    }
-
-                    if(!layers.includes(knot.integration_scheme[i].out.name)){
-                        layers.push(knot.integration_scheme[i].out.name);
-                        joinedList.push(joined);
-                    }else if(joined){
-                        joinedList[layers.indexOf(knot.integration_scheme[i].out.name)] = joined;
+        if(!Environment.serverless){
+            for(const knot of this.getKnots()){
+                if(!knot.knot_op){
+                    // load layers from knots if they dont already exist
+                    for(let i = 0; i < knot.integration_scheme.length; i++){
+    
+                        let joined = false // if the layers was joined with another layer
+    
+                        if(knot.integration_scheme[i].in != undefined && knot.integration_scheme[i].in?.name != knot.integration_scheme[i].out.name){
+                            joined = true;
+                        }
+    
+                        if(!layers.includes(knot.integration_scheme[i].out.name)){
+                            layers.push(knot.integration_scheme[i].out.name);
+                            joinedList.push(joined);
+                        }else if(joined){
+                            joinedList[layers.indexOf(knot.integration_scheme[i].out.name)] = joined;
+                        }
                     }
                 }
             }
+    
+            for (let i = 0; i < layers.length; i++) {
+    
+                let element = layers[i];
+    
+                // loads from file if not provided
+                const layer = await DataApi.getLayer(element);
+    
+                // adds the new layer
+                await this.addLayer(layer, joinedList[i]);
+            }
+        }else{ // serverless mode
+            let premadeKnots = this.getPremadeKnots();
+
+            if(premadeKnots != undefined){
+                for(const premadeKnot of premadeKnots){
+                    let joined = (premadeKnot.in_name != undefined);
+       
+                    if(!layers.includes(premadeKnot.out_name)){
+                        layers.push(premadeKnot.out_name);
+                        joinedList.push(joined);
+                    }else if(joined){
+                        joinedList[layers.indexOf(premadeKnot.out_name)] = joined;
+                    }
+                }
+        
+                for (let i = 0; i < layers.length; i++) {
+        
+                    let element = layers[i];
+        
+                    const layer = await DataApi.getLayer(element);
+        
+                    // adds the new layer
+                    await this.addLayer(layer, joinedList[i]);
+                }
+            }
         }
-
-        for (let i = 0; i < layers.length; i++) {
-
-            let element = layers[i];
-
-            // loads from file if not provided
-            const layer = await DataApi.getLayer(element);
-
-            // adds the new layer
-            await this.addLayer(layer, joinedList[i]);
-        }
-
     }
 
     // Called by Views.tsx
@@ -631,17 +677,36 @@ class GrammarInterpreter {
                 let allKnotsByPhysical: any = {};
 
                 for(const knotId of component.grammar.knots){
-                    let knotObjs = this.getKnots(<string>knotId)
+                    if(!Environment.serverless){
+                        let knotObjs = this.getKnots(<string>knotId);
+    
+                        if(knotObjs.length == 1){
+                            let physicalId = this.getKnotLastLink(knotObjs[0]).out.name;
+                        
+                            if(allKnotsByPhysical[physicalId] == undefined){
+                                allKnotsByPhysical[physicalId] = [knotId];
+                            }else{
+                                allKnotsByPhysical[physicalId].push(knotId);
+                            }
+                        }
+                    }else{
+                        let knotObjs = this.getPremadeKnots(<string>knotId);
 
-                    if(knotObjs.length == 1){
-                        let physicalId = this.getKnotLastLink(knotObjs[0]).out.name;
-                    
-                        if(allKnotsByPhysical[physicalId] == undefined){
-                            allKnotsByPhysical[physicalId] = [knotId];
-                        }else{
-                            allKnotsByPhysical[physicalId].push(knotId);
+                        if(knotObjs == undefined){
+                            knotObjs = [];
+                        }
+
+                        if(knotObjs.length == 1){
+                            let physicalId = knotObjs[0].out_name;
+                        
+                            if(allKnotsByPhysical[physicalId] == undefined){
+                                allKnotsByPhysical[physicalId] = [knotId];
+                            }else{
+                                allKnotsByPhysical[physicalId].push(knotId);
+                            }
                         }
                     }
+
                 }
 
                 plots.push({
@@ -681,6 +746,18 @@ class GrammarInterpreter {
         }
 
         return this._grammar.knots;
+    }
+
+    public getPremadeKnots(knotId: string | null = null){
+
+        if(knotId != null && this._grammar.ex_knots != undefined){
+            for(const knot of this._grammar.ex_knots){
+                if(knot.id == knotId)
+                    return [knot];
+            }
+        }
+
+        return this._grammar.ex_knots;
     }
 
     public getMap(mapId: number = 0){
@@ -727,10 +804,21 @@ class GrammarInterpreter {
             
                     let knotId = ''; // TODO: the layer could appear in more than one Knot. Create knot structure
             
-                    for(const knot of this._grammar.knots){
-                        if(this.getKnotOutputLayer(knot) == layerId){
-                            knotId = knot.id;
-                            break;
+                    if(!Environment.serverless){
+                        for(const knot of this._grammar.knots){
+                            if(this.getKnotOutputLayer(knot) == layerId){
+                                knotId = knot.id;
+                                break;
+                            }
+                        }
+                    }else{
+                        if(this._grammar.ex_knots != undefined){
+                            for(const ex_knot of this._grammar.ex_knots){
+                                if(ex_knot.out_name == layerId){
+                                    knotId = ex_knot.id;
+                                    break;
+                                }
+                            }
                         }
                     }
             
@@ -817,8 +905,16 @@ class GrammarInterpreter {
 
     public getKnotById(knotId: string){
 
-        for(let i = 0; i < this.getKnots().length; i++){
-            let knot = this.getKnots()[i];
+        let knots: IKnot[] | IExKnot[] = [];
+
+        if(!Environment.serverless)
+            knots = this.getKnots();
+        else
+            knots = <IExKnot[]>this.getPremadeKnots();
+
+        for(let i = 0; i < knots.length; i++){
+
+            let knot: IKnot | IExKnot = knots[i];
 
             if(knotId == knot.id){
                 return knot;
@@ -827,22 +923,28 @@ class GrammarInterpreter {
 
     }
 
-    public getKnotOutputLayer(knot: IKnot){
-        if(knot.knot_op == true){
+    public getKnotOutputLayer(knot: IKnot | IExKnot){
 
-            let lastKnotId = knot.integration_scheme[knot.integration_scheme.length-1].out.name;
-
-            let lastKnot = this.getKnotById(lastKnotId);
-
-            if(lastKnot == undefined){
-                throw Error("Could not process knot "+lastKnotId);
+        if(!Environment.serverless){
+            if((<IKnot>knot).knot_op == true){
+    
+                let lastKnotId = (<IKnot>knot).integration_scheme[(<IKnot>knot).integration_scheme.length-1].out.name;
+    
+                let lastKnot = <IKnot>this.getKnotById(lastKnotId);
+    
+                if(lastKnot == undefined){
+                    throw Error("Could not process knot "+lastKnotId);
+                }
+    
+                return lastKnot.integration_scheme[lastKnot.integration_scheme.length-1].out.name;
+    
+            }else{
+                return (<IKnot>knot).integration_scheme[(<IKnot>knot).integration_scheme.length-1].out.name;
             }
-
-            return lastKnot.integration_scheme[lastKnot.integration_scheme.length-1].out.name;
-
         }else{
-            return knot.integration_scheme[knot.integration_scheme.length-1].out.name;
+            return (<IExKnot>knot).out_name;
         }
+
     }
 
     public getKnotLastLink(knot: IKnot){
@@ -850,7 +952,7 @@ class GrammarInterpreter {
             
             let lastKnotId = knot.integration_scheme[knot.integration_scheme.length-1].out.name;
 
-            let lastKnot = this.getKnotById(lastKnotId);
+            let lastKnot = <IKnot>this.getKnotById(lastKnotId);
             
             if(lastKnot == undefined){
                 throw Error("Could not process knot "+lastKnotId);
@@ -884,10 +986,18 @@ class GrammarInterpreter {
         let plotsKnotData: {knotId: string, physicalId: string, allFilteredIn: boolean, elements: {coordinates: number[], abstract: number[], highlighted: boolean, filteredIn: boolean, index: number}[]}[] = [];
 
         for(const knotId of plotsKnots){
-            for(const knot of this.getKnots()){
+
+            let allKnots: IKnot[] | IExKnot[] = [];
+
+            if(!Environment.serverless){
+                allKnots = this.getKnots();
+            }else{
+                allKnots = <IExKnot[]>this.getPremadeKnots();
+            }
+
+            for(const knot of allKnots){
                 if(knotId == knot.id){
 
-                    let lastLink = this.getKnotLastLink(knot);
 
                     let left_layer = this._layerManager.searchByLayerId(this.getKnotOutputLayer(knot));
 
@@ -897,8 +1007,16 @@ class GrammarInterpreter {
 
                     let elements = [];
 
-                    if(lastLink.out.level == undefined){ // this is a pure knot
-                        continue;
+                    let lastLink: ILinkDescription | null = null;
+
+                    if(!Environment.serverless){
+                        lastLink = this.getKnotLastLink(<IKnot>knot);
+                        if(lastLink.out.level == undefined){ // this is a pure knot
+                            continue;
+                        }
+                    }else{
+                        if((<IExKnot>knot).in_name == undefined)
+                            continue;
                     }
 
                     // let centroid = this.camera.getWorldOrigin();
@@ -907,10 +1025,18 @@ class GrammarInterpreter {
 
                     if(viewId != null){
                         let map = MapViewFactory.getInstance(this, this._layerManager, this._knotManager, viewId);
-                        coordinates = left_layer.getCoordsByLevel(lastLink.out.level, map.camera.getWorldOrigin(), viewId);
+                        if(!Environment.serverless)
+                            coordinates = left_layer.getCoordsByLevel((<ILinkDescription>lastLink).out.level, map.camera.getWorldOrigin(), viewId);
+                        else
+                            coordinates = left_layer.getCoordsByLevel(LevelType.OBJECTS, map.camera.getWorldOrigin(), viewId); // serverless is always on the OBJECTS level
                     }
 
-                    let functionValues = left_layer.getFunctionByLevel(lastLink.out.level, knotId);
+                    let functionValues: number[][][] = [];
+
+                    if(!Environment.serverless)
+                        functionValues = left_layer.getFunctionByLevel((<ILinkDescription>lastLink).out.level, knotId);
+                    else
+                        functionValues = left_layer.getFunctionByLevel(LevelType.OBJECTS, knotId); // serverless is always on the OBJECTS level
 
                     let knotStructure = this._knotManager.getKnotById(knotId);
 
@@ -918,7 +1044,13 @@ class GrammarInterpreter {
 
                     for(let i = 0; i < this._components_grammar.length; i++){ // if one map higlighted something that will appear hilighted in every view that depends on that knot
                         if(this._components_grammar[i].grammar != undefined && this._components_grammar[i].grammar?.grammar_type == GrammarType.MAP){
-                            let highlighted_map = left_layer.getHighlightsByLevel(lastLink.out.level, (<Knot>knotStructure).shaders[i]); // getting higlights for the layer for each map
+
+                            let highlighted_map: boolean[] = [];
+
+                            if(!Environment.serverless)
+                                highlighted_map = left_layer.getHighlightsByLevel((<ILinkDescription>lastLink).out.level, (<Knot>knotStructure).shaders[i]); // getting higlights for the layer for each map
+                            else
+                                highlighted_map = [];
 
                             if(highlighted.length == 0){
                                 highlighted = highlighted_map;
@@ -968,9 +1100,16 @@ class GrammarInterpreter {
                             readCoords += coordinates[i].length/left_layer.mesh.dimension;
                     }
 
+                    let physicalId = "";
+
+                    if(!Environment.serverless)
+                        physicalId = (<ILinkDescription>lastLink).out.name
+                    else
+                        physicalId = (<IExKnot>knot).out_name
+
                     let knotData = {
                         knotId: knotId,
-                        physicalId: lastLink.out.name,
+                        physicalId: physicalId,
                         // allFilteredIn: true, // temp
                         allFilteredIn: false,
                         elements: elements
@@ -983,22 +1122,6 @@ class GrammarInterpreter {
 
         return plotsKnotData;
     }
-
-    // /**
-    //  * The callback is called everytime some data that can impact the front end changes
-    //  */
-    // private setFrontEndCallback(frontEndCallback: any){
-    //     this._frontEndCallback = frontEndCallback;
-    // }
-
-    // /**
-    //  * The state of the data in the back end changed. Need to propagate change to the front-end
-    //  */
-    // private stateChanged(){
-
-    //     let states: any[] = [];
-
-    // }
 
     // TODO: more than one view should be rendered but inside a single div provided by the front end
     private renderViews(mainDiv: HTMLElement, grammar: IMasterGrammar){

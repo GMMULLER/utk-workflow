@@ -128,6 +128,19 @@ export class LayerManager {
         return null;
     }
 
+    getValuesExKnot(layerId: string, in_name: string){
+        let layer = <Layer>this.searchByLayerId(layerId);
+        let externalJoinedJson = layer.externalJoinedJson;
+
+        for(let i = 0; i < externalJoinedJson.incomingId.length; i++){
+            if(externalJoinedJson.incomingId[i] == in_name){
+                return externalJoinedJson.inValues[i];
+            }
+        }
+
+        return [];
+    }
+
     getAbstractDataFromLink(linkScheme: ILinkDescription[]): number[][] | null{
         
         if(linkScheme.length < 1){

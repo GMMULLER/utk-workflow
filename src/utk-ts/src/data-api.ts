@@ -1,7 +1,7 @@
 import { Environment } from './environment';
 import { DataLoader } from './data-loader';
 
-import { ICameraData, ILayerFeature, ILayerData, IMapStyle, IMasterGrammar, IMapGrammar, IPlotGrammar, IJoinedJson } from './interfaces';
+import { ICameraData, ILayerFeature, ILayerData, IMapStyle, IMasterGrammar, IMapGrammar, IPlotGrammar, IJoinedJson, IExternalJoinedJson } from './interfaces';
 
 export abstract class DataApi {
 
@@ -10,7 +10,7 @@ export abstract class DataApi {
     static carameraParameters: ICameraData | null = null;
     static layers: ILayerData[] | null = null;
     static layersFeature: ILayerFeature[] | null = null;
-    static joinedJsons: {id: string, json: IJoinedJson}[] | null = null;
+    static joinedJsons: {id: string, json: IJoinedJson | IExternalJoinedJson}[] | null = null;
     static components: {id: string, json: IMapGrammar | IPlotGrammar}[] | null = null;
 
     /**

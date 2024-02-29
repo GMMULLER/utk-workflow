@@ -8,7 +8,7 @@ import vsSmoothColorMap from './shaders/smoothColorMap.vs';
 // @ts-ignore
 import fsSmoothColorMap from './shaders/smoothColorMap.fs';
 
-import { IKnot } from "./interfaces";
+import { IExKnot, IKnot } from "./interfaces";
 
 import { AuxiliaryShaderTriangles } from "./auxiliaryShaderTriangles";
 
@@ -130,7 +130,7 @@ export class ShaderSmoothColorMap extends AuxiliaryShaderTriangles {
         this._filteredDirty = true;
     }
 
-    public normalizeFunction(mesh: Mesh, knot: IKnot): void {
+    public normalizeFunction(mesh: Mesh, knot: IKnot | IExKnot): void {
 
         this._function = mesh.getFunctionVBO(knot.id);
         this._currentKnot = knot;
@@ -151,7 +151,7 @@ export class ShaderSmoothColorMap extends AuxiliaryShaderTriangles {
         }
     }
 
-    public updateShaderData(mesh: Mesh, knot: IKnot, currentTimestepFunction: number = 0): void {
+    public updateShaderData(mesh: Mesh, knot: IKnot | IExKnot, currentTimestepFunction: number = 0): void {
         this._currentTimestepFunction = currentTimestepFunction;
         this.normalizeFunction(mesh, knot);
     }

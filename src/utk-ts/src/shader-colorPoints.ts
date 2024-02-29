@@ -8,7 +8,7 @@ import vsColorPoints from './shaders/colorPoints.vs';
 // @ts-ignore
 import fsColorPoints from './shaders/colorPoints.fs';
 
-import { IKnot } from "./interfaces";
+import { IExKnot, IKnot } from "./interfaces";
 
 import * as d3_scale from 'd3-scale';
 
@@ -78,7 +78,7 @@ export class ShaderColorPoints extends Shader {
         this._coords = mesh.getCoordinatesVBO(centroid, viewId);
     }
 
-    public normalizeFunction(mesh: Mesh, knot: IKnot): void {
+    public normalizeFunction(mesh: Mesh, knot: IKnot | IExKnot): void {
         this._function = mesh.getFunctionVBO(knot.id);
         this._functionDirty = true;
 
@@ -96,7 +96,7 @@ export class ShaderColorPoints extends Shader {
         }
     }
 
-    public updateShaderData(mesh: Mesh, knot: IKnot, currentTimestepFunction: number = 0): void {
+    public updateShaderData(mesh: Mesh, knot: IKnot | IExKnot, currentTimestepFunction: number = 0): void {
         this._currentTimestepFunction = currentTimestepFunction;
         this.normalizeFunction(mesh, knot);
     }

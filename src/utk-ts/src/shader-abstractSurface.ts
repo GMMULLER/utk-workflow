@@ -8,7 +8,7 @@ import fsAbsSurface from './shaders/absSurface.fs';
 
 import { TextureComponent } from "./texture";
 
-import { IKnot } from "./interfaces";
+import { IExKnot, IKnot } from "./interfaces";
 
 /**
  * This shader should only be used with the buildings layer
@@ -87,7 +87,7 @@ export class ShaderAbstractSurface extends Shader{
         }
     }
 
-    public updateShaderData(mesh: Mesh, knot: IKnot, currentTimestepFunction: number = 0): void {
+    public updateShaderData(mesh: Mesh, knot: IKnot | IExKnot, currentTimestepFunction: number = 0): void {
     }
 
     public updateShaderUniforms(data: any) {

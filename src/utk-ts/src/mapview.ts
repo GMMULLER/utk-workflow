@@ -11,7 +11,7 @@ import { MouseEventsFactory } from './mouse-events';
 import { DataApi } from './data-api';
 import { LayerManager } from './layer-manager';
 
-import { ICameraData, ILayerData, IMasterGrammar } from './interfaces';
+import { ICameraData, IExKnot, IKnot, ILayerData, ILinkDescription, IMasterGrammar } from './interfaces';
 
 import { LevelType, PlotArrangementType } from './constants';
 
@@ -21,6 +21,7 @@ import { ShaderPickingTriangles } from "./shader-picking-triangles";
 import { PlotManager } from "./plot-manager";
 import { KnotManager } from './knot-manager';
 import { Knot } from './knot';
+import { Environment } from './environment';
 
 class MapView {
     // Html div that will host the map
@@ -229,13 +230,22 @@ class MapView {
             for(const elementIndex of elements){
                 let elementsObject: any = {};
             
-                for(const knot of this._grammarInterpreter.getKnots()){
-                    let lastLink = this._grammarInterpreter.getKnotLastLink(knot);
-        
-                    if(lastLink.out.name == layerId && lastLink.out.level == level){
-                        elementsObject[knot.id] = elementIndex;
+                if(!Environment.serverless){
+                    for(const knot of this._grammarInterpreter.getKnots()){
+                        let lastLink = this._grammarInterpreter.getKnotLastLink(knot);
+            
+                        if(lastLink.out.name == layerId && lastLink.out.level == level){
+                            elementsObject[knot.id] = elementIndex;
+                        }
+    
                     }
-
+                }else{
+                    for(const knot of this._grammarInterpreter.getPremadeKnots()){
+                        if(knot.out_name == layerId && LevelType.OBJECTS == level){
+                            elementsObject[knot.id] = elementIndex;
+                        }
+    
+                    }
                 }
 
                 this.plotManager.applyInteractionEffectsLocally(elementsObject, true, true, true); // apply to the local plot manager
@@ -246,11 +256,19 @@ class MapView {
         }else{
             let knotsToClear: string[] = [];
 
-            for(const knot of this._grammarInterpreter.getKnots()){
-                let lastLink = this._grammarInterpreter.getKnotLastLink(knot);
-    
-                if(lastLink.out.name == layerId){
-                    knotsToClear.push(knot.id);
+            if(!Environment.serverless){
+                for(const knot of this._grammarInterpreter.getKnots()){
+                    let lastLink = this._grammarInterpreter.getKnotLastLink(knot);
+        
+                    if(lastLink.out.name == layerId){
+                        knotsToClear.push(knot.id);
+                    }
+                }
+            }else{
+                for(const knot of this._grammarInterpreter.getPremadeKnots()){
+                    if(knot.out_name == layerId){
+                        knotsToClear.push(knot.id);
+                    }
                 }
             }
 
@@ -269,7 +287,7 @@ class MapView {
     //TODO: not sure if mapview should contain this logic
     setHighlightElement(knotId: string, elementIndex: number, value: boolean, _this: any){
 
-        let knot = _this._grammarInterpreter.getKnotById(knotId);
+        let knot: IKnot | IExKnot | undefined = _this._grammarInterpreter.getKnotById(knotId);
 
         if(knot == undefined){
             throw Error("Cannot highlight element knot not found");
@@ -277,10 +295,13 @@ class MapView {
 
         let layerId = _this._grammarInterpreter.getKnotOutputLayer(knot);
 
-        let lastLink = _this._grammarInterpreter.getKnotLastLink(knot);
+        let lastLink: ILinkDescription | null = null;
 
-        if(lastLink.out.level == undefined)
-            return;
+        if(!Environment.serverless){
+            lastLink = _this._grammarInterpreter.getKnotLastLink(knot);
+            if((<ILinkDescription>lastLink).out.level == undefined)
+                return;
+        }
 
         let knotObject = _this.knotManager.getKnotById(knotId);
 
@@ -289,7 +310,11 @@ class MapView {
         // not sure if layer should be accessed directly or knot.ts be used
         for(const layer of _this._layerManager.layers){
             if(layer.id == layerId){
-                layer.setHighlightElements([elementIndex], <LevelType>lastLink.out.level, value, shaders, _this._camera.getWorldOrigin(), _this.viewId);
+                if(!Environment.serverless)
+                    layer.setHighlightElements([elementIndex], <LevelType>(<ILinkDescription>lastLink).out.level, value, shaders, _this._camera.getWorldOrigin(), _this.viewId);
+                else
+                    layer.setHighlightElements([elementIndex], LevelType.OBJECTS, value, shaders, _this._camera.getWorldOrigin(), _this.viewId);
+
                 break;
             }
         }

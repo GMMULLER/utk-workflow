@@ -4,6 +4,7 @@ export * from './colormap';
 export * from './constants';
 export * from './data-api';
 export * from './data-loader';
+export * from './serverless-api';
 export * from './environment';
 export * from './geoutils';
 export * from './interfaces';

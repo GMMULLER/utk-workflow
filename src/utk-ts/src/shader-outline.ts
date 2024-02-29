@@ -6,7 +6,7 @@ import vsOutline from './shaders/outline.vs';
 // @ts-ignore
 import fsOutline from './shaders/outline.fs';
 
-import { IKnot } from "./interfaces";
+import { IExKnot, IKnot } from "./interfaces";
 
 /**
  * This shader should only be used with the buildings layer
@@ -103,7 +103,7 @@ export class ShaderOutline extends Shader {
         }
     }
 
-    public updateShaderData(mesh: Mesh, knot: IKnot, currentTimestepFunction: number = 0): void {
+    public updateShaderData(mesh: Mesh, knot: IKnot | IExKnot, currentTimestepFunction: number = 0): void {
         return
     }
 

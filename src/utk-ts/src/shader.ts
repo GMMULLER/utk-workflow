@@ -1,12 +1,12 @@
 import { Mesh } from "./mesh";
 
-import { IKnot } from "./interfaces";
+import { IExKnot, IKnot } from "./interfaces";
 
 export abstract class Shader {
 
     // layer's shader
     protected _shaderProgram: WebGLShader;
-    protected _currentKnot: IKnot; // current knot supplying abstract data for this layer
+    protected _currentKnot: IKnot | IExKnot; // current knot supplying abstract data for this layer
 
     /**
      * Default constructor
@@ -18,7 +18,7 @@ export abstract class Shader {
         this.initShaderProgram(vsSource, fsSource, glContext);  
     }
 
-    get currentKnot(): IKnot{
+    get currentKnot(): IKnot | IExKnot{
         return this._currentKnot;
     }
 
@@ -32,7 +32,7 @@ export abstract class Shader {
      * Update the VBOs of the layer
      * @param {Mesh} mesh Updates the mesh data 
      */
-    public abstract updateShaderData(mesh: Mesh, knot: IKnot): void;
+    public abstract updateShaderData(mesh: Mesh, knot: IKnot | IExKnot): void;
 
     /**
     * Update the VBOs of the layer

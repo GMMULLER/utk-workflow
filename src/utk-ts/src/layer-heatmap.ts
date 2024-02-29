@@ -1,5 +1,5 @@
 import { OperationType, LevelType } from "./constants";
-import { ILayerData, ILayerFeature, IKnot } from "./interfaces";
+import { ILayerData, ILayerFeature, IKnot, IExKnot } from "./interfaces";
 
 import { Layer } from "./layer";
 import { ShaderAbstractSurface } from "./shader-abstractSurface";
@@ -56,7 +56,7 @@ export class HeatmapLayer extends Layer {
         throw Error("Filtering not supported for heatmap layer");
     }
 
-    updateFunction(knot: IKnot, shaders: (Shader|AuxiliaryShader)[]): void {
+    updateFunction(knot: IKnot | IExKnot, shaders: (Shader|AuxiliaryShader)[]): void {
         // updates the shader references
         for (const shader of shaders) {
             shader.updateShaderData(this._mesh, knot);

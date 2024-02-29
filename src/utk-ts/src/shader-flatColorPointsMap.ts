@@ -9,7 +9,7 @@ import vsFlatColorMap from './shaders/flatColorPointsMap.vs';
 // @ts-ignore
 import fsFlatColorMap from './shaders/flatColorPointsMap.fs';
 
-import { IKnot } from "./interfaces";
+import { IExKnot, IKnot } from "./interfaces";
 
 import * as d3_scale from 'd3-scale';
 
@@ -105,7 +105,7 @@ export class ShaderFlatColorPointsMap extends AuxiliaryShaderTriangles {
         }
     }
 
-    public normalizeFunction(mesh: Mesh, knot: IKnot): void{
+    public normalizeFunction(mesh: Mesh, knot: IKnot | IExKnot): void{
         this._function = mesh.getFunctionVBO(knot.id);
         this._currentKnot = knot;
         this._functionDirty = true;
@@ -148,7 +148,7 @@ export class ShaderFlatColorPointsMap extends AuxiliaryShaderTriangles {
 
     }
 
-    public updateShaderData(mesh: Mesh, knot: IKnot, currentTimestepFunction: number = 0): void {
+    public updateShaderData(mesh: Mesh, knot: IKnot | IExKnot, currentTimestepFunction: number = 0): void {
         this._currentTimestepFunction = currentTimestepFunction;
         this.normalizeFunction(mesh, knot);
     }

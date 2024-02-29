@@ -4,9 +4,10 @@ import { Shader } from './shader';
 // import { Camera } from './camera';
 import { Mesh } from "./mesh";
 
-import { ILayerFeature, IMapStyle, IJoinedLayer, IJoinedObjects, IKnot, IJoinedJson } from './interfaces';
+import { ILayerFeature, IMapStyle, IJoinedLayer, IJoinedObjects, IKnot, IJoinedJson, IExternalJoinedJson, IExKnot } from './interfaces';
 import { LayerType, RenderStyle, OperationType, LevelType } from './constants';
 import { AuxiliaryShader } from './auxiliaryShader';
+import { Environment } from './environment';
 
 export abstract class Layer {
     // layer id
@@ -24,6 +25,8 @@ export abstract class Layer {
     protected _joinedLayers: IJoinedLayer[];
     protected _joinedObjects: IJoinedObjects[];
 
+    protected _externalJoinedJson: IExternalJoinedJson;
+
     // layer's camera
     protected _camera: any;
 
@@ -38,9 +41,13 @@ export abstract class Layer {
         this._mesh = new Mesh(dimension, zOrder);
     }
 
-    setJoinedJson(joinedJson: IJoinedJson){
-        this._joinedLayers = joinedJson.joinedLayers;
-        this._joinedObjects = joinedJson.joinedObjects;
+    setJoinedJson(joinedJson: IJoinedJson | IExternalJoinedJson){
+        if(Environment.serverless){ // IExternalJoinedJson 
+            this._externalJoinedJson = <IExternalJoinedJson>joinedJson;
+        } else { // IJoinedJson
+            this._joinedLayers = (<IJoinedJson>joinedJson).joinedLayers;
+            this._joinedObjects = (<IJoinedJson>joinedJson).joinedObjects;
+        } 
     }
 
     /**
@@ -59,6 +66,10 @@ export abstract class Layer {
 
     get joinedLayers(): IJoinedLayer[] {
         return this._joinedLayers;
+    }
+
+    get externalJoinedJson(): IExternalJoinedJson {
+        return this._externalJoinedJson;
     }
 
     get joinedObjects(): IJoinedObjects[] {
@@ -93,7 +104,7 @@ export abstract class Layer {
 
     abstract updateShaders(shaders: (Shader|AuxiliaryShader)[], centroid:number[] | Float32Array, viewId: number): void;
 
-    abstract updateFunction(knot: IKnot, shaders: (Shader|AuxiliaryShader)[]): void;
+    abstract updateFunction(knot: IKnot | IExKnot, shaders: (Shader|AuxiliaryShader)[]): void;
 
     abstract render(glContext: WebGL2RenderingContext, shaders: (Shader|AuxiliaryShader)[]): void;
 

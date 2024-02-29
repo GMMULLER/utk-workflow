@@ -1,14 +1,21 @@
 import { Environment } from './environment';
 import { DataApi } from './data-api';
 
-import { ICameraData, ILayerFeature, ILayerData, IMapStyle, IMasterGrammar, IMapGrammar, IPlotGrammar, IJoinedJson } from './interfaces';
+import { ILayerData, IMapGrammar, IPlotGrammar, IJoinedJson, IExternalJoinedJson } from './interfaces';
+
+// export interface IJoinedJson {
+//     joinedLayers: IJoinedLayer[]; // description of the joins with other layers
+//     joinedObjects: IJoinedObjects[]; // description of the relation created with other layers
+// }
 
 export abstract class ServerlessApi {
 
-    static async processGeoDataFrames(geoDataframes: string[]){
+    static async formatData(layers: ILayerData[], joinedJsons: IExternalJoinedJson[]){
 
+        // console.log("geoJsons", geoJsons);
         
-
+        
+        
         // TODO: parse geoDataFrames
         // TODO: extract layers
         // TODO: setLayers

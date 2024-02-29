@@ -6,7 +6,7 @@ import vsFlatColor from './shaders/flatColor.vs';
 // @ts-ignore
 import fsFlatColor from './shaders/flatColor.fs';
 
-import { IKnot } from "./interfaces";
+import { IExKnot, IKnot } from "./interfaces";
 
 export class ShaderFlatColor extends Shader {
 
@@ -60,7 +60,7 @@ export class ShaderFlatColor extends Shader {
         }
     }
 
-    public updateShaderData(mesh: Mesh, knot: IKnot, currentTimestepFunction: number = 0): void {
+    public updateShaderData(mesh: Mesh, knot: IKnot | IExKnot, currentTimestepFunction: number = 0): void {
         return;
     }
 

@@ -225,7 +225,7 @@ export class Mesh {
                 let coordsByThree = Math.trunc(coordinates.length/3);
 
                 for(let i = 0; i < coordsByThree; i++){
-                    for(let k = 0; k < functionValues.length; k++){
+                    for(let k = 0; k < functionValues.length; k++){ 
 
                         if(k >= functionValuesCurrentGeometry.length){
                             functionValuesCurrentGeometry.push([]);

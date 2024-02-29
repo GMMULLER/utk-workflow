@@ -6,7 +6,7 @@ import vsFlatColorPoints from './shaders/flatColorPoints.vs';
 // @ts-ignore
 import fsFlatColorPoints from './shaders/flatColorPoints.fs';
 
-import { IKnot } from "./interfaces";
+import { IExKnot, IKnot } from "./interfaces";
 
 const d3 = require('d3');
 
@@ -52,7 +52,7 @@ export class ShaderFlatColorPoints extends Shader {
         this._coords = mesh.getCoordinatesVBO(centroid, viewId);
     }
 
-    public updateShaderData(mesh: Mesh, knot: IKnot, currentTimestepFunction: number = 0): void {
+    public updateShaderData(mesh: Mesh, knot: IKnot | IExKnot, currentTimestepFunction: number = 0): void {
         return;
     }
 

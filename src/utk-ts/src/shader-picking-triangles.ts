@@ -9,7 +9,7 @@ import vsPicking from './shaders/picking-triangles.vs';
 import fsPicking from './shaders/picking-triangles.fs';
 import { AuxiliaryShaderTriangles } from "./auxiliaryShaderTriangles";
 
-import { IKnot } from "./interfaces";
+import { IExKnot, IKnot } from "./interfaces";
 
 export class ShaderPickingTriangles extends Shader {
     // Data to be rendered
@@ -365,7 +365,7 @@ export class ShaderPickingTriangles extends Shader {
         this._auxiliaryShader.clearPicking();
     }
 
-    public updateShaderData(mesh: Mesh, knot: IKnot, currentTimestepFunction: number = 0): void {
+    public updateShaderData(mesh: Mesh, knot: IKnot | IExKnot, currentTimestepFunction: number = 0): void {
         return;
     }
 

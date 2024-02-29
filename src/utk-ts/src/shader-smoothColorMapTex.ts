@@ -10,7 +10,7 @@ import fsSmoothColorMap from './shaders/smoothColorMapTex.fs';
 
 import {cross, rotateYMatrix, rotateZMatrix, angle, radians, multiplyMatrices, translateMatrix, normalize, dot, euclideanDistance} from './utils';
 
-import { IKnot } from "./interfaces";
+import { IExKnot, IKnot } from "./interfaces";
 
 import * as d3_scale from 'd3-scale';
 
@@ -170,7 +170,7 @@ export class ShaderSmoothColorMapTex extends AuxiliaryShader {
         this._filteredDirty = true;
     }
 
-    public normalizeFunction(mesh: Mesh, knot: IKnot): void {
+    public normalizeFunction(mesh: Mesh, knot: IKnot | IExKnot): void {
         this._functionDirty = true;
         this._currentKnot = knot;
         this._colorOrPickedDirty = true;
@@ -208,7 +208,7 @@ export class ShaderSmoothColorMapTex extends AuxiliaryShader {
         }
     }
 
-    public updateShaderData(mesh: Mesh, knot: IKnot, currentTimestepFunction: number = 0): void {
+    public updateShaderData(mesh: Mesh, knot: IKnot | IExKnot, currentTimestepFunction: number = 0): void {
         this._currentTimestepFunction = currentTimestepFunction;
         this.normalizeFunction(mesh, knot);
     }

@@ -6,7 +6,7 @@ import vsSmoothColor from './shaders/smoothColor.vs';
 // @ts-ignore
 import fsSmoothColor from './shaders/smoothColor.fs';
 
-import { IKnot } from "./interfaces";
+import { IExKnot, IKnot } from "./interfaces";
 
 export class ShaderSmoothColor extends Shader {
 
@@ -68,7 +68,7 @@ export class ShaderSmoothColor extends Shader {
         }
     }
 
-    public updateShaderData(mesh: Mesh, knot: IKnot, currentTimestepFunction: number = 0): void {
+    public updateShaderData(mesh: Mesh, knot: IKnot | IExKnot, currentTimestepFunction: number = 0): void {
         return;
     }
 

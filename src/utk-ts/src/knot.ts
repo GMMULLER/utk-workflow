@@ -17,18 +17,19 @@ import { AuxiliaryShaderTriangles } from "./auxiliaryShaderTriangles";
 
 import { BuildingsLayer } from "./layer-buildings";
 import { TrianglesLayer } from "./layer-triangles";
-import { IKnot } from "./interfaces";
+import { IExKnot, IKnot } from "./interfaces";
 import { LayerManager } from "./layer-manager";
 import { ShaderColorPoints } from "./shader-colorPoints";
 import { ShaderFlatColorPoints } from "./shader-flatColorPoints";
 import { PointsLayer } from "./layer-points";
 import { ShaderPickingPoints } from "./shader-picking-points";
+import { Environment } from "./environment";
 
 export class Knot {
 
     protected _physicalLayer: Layer; // the physical format the data will assume
     protected _thematicData: number[][] | null;
-    protected _knotSpecification: IKnot;
+    protected _knotSpecification: IKnot | IExKnot;
     protected _id: string;
     protected _shaders: any = {};
     protected _visible: boolean;
@@ -39,7 +40,7 @@ export class Knot {
     protected _domain: number[] = [];
     protected _scale: string = 'scaleLinear';
 
-    constructor(id: string, physicalLayer: Layer, knotSpecification: IKnot, grammarInterpreter: any, visible: boolean) {
+    constructor(id: string, physicalLayer: Layer, knotSpecification: IKnot | IExKnot, grammarInterpreter: any, visible: boolean) {
         this._physicalLayer = physicalLayer;
         this._knotSpecification = knotSpecification;
         this._id = id;
@@ -221,103 +222,111 @@ export class Knot {
     addMeshFunction(layerManager: LayerManager){
         let functionValues: number[][] | null = null;
         
-        if(this._knotSpecification.integration_scheme != null){
-            functionValues = layerManager.getAbstractDataFromLink(this._knotSpecification.integration_scheme)
+        if((<IKnot>this._knotSpecification).integration_scheme != null){
+            functionValues = layerManager.getAbstractDataFromLink((<IKnot>this._knotSpecification).integration_scheme)
         }
 
         this._thematicData = functionValues;
 
         let distributedValues = this._physicalLayer.distributeFunctionValues(functionValues);
 
-        this._physicalLayer.mesh.loadFunctionData(distributedValues, this._knotSpecification.id);
+        this._physicalLayer.mesh.loadFunctionData(distributedValues, (<IKnot>this._knotSpecification).id);
     }
 
     processThematicData(layerManager: LayerManager){
 
-        if(this._knotSpecification.knot_op != true){
-            this.addMeshFunction(layerManager);
-        }else{ // TODO: knot should not have to retrieve the subknots they should be given
-            let functionsPerKnot: any = {};
-
-            for(const scheme of this._knotSpecification.integration_scheme){
-                if(functionsPerKnot[scheme.out.name] == undefined){
-                    let knot = this._grammarInterpreter.getKnotById(scheme.out.name);
-
-                    if(knot == undefined){
-                        throw Error("Could not retrieve knot that composes knot_op "+this._knotSpecification.id);
-                    }
-
-                    functionsPerKnot[scheme.out.name] = layerManager.getAbstractDataFromLink(knot.integration_scheme);
-                }
-
-                if(scheme.in != undefined && functionsPerKnot[<string>scheme.in.name] == undefined){
-                    let knot = this._grammarInterpreter.getKnotById(<string>scheme.in.name);
-
-                    if(knot == undefined){
-                        throw Error("Could not retrieve knot that composes knot_op "+this._knotSpecification.id);
-                    }
-
-                    functionsPerKnot[<string>scheme.in.name] = layerManager.getAbstractDataFromLink(knot.integration_scheme);
-                }
-
-            }
-
-            let functionSize = -1;
-
-            let functionsPerKnotsKeys = Object.keys(functionsPerKnot);
-
-            for(const key of functionsPerKnotsKeys){
-                if(functionSize == -1){
-                    functionSize = functionsPerKnot[key][0].length;
-                }else if(functionSize != functionsPerKnot[key][0].length){
-                    throw Error("All knots used in knot_op must have the same length");
-                }
-            }
-
-            if(functionSize == -1){
-                throw Error("Could not retrieve valid function values for knot_op "+this._knotSpecification.id);
-            }
-
-            let prevResult: number[][] = [];
-
-            // let prevResult: number[] = new Array(functionSize);
-
-            let linkIndex = 0;
-
-            for(const scheme of this._knotSpecification.integration_scheme){
-                if(linkIndex == 0 && (<string>scheme.op).includes("prevResult")){
-                    throw Error("It is not possible to access a previous result (prevResult) for the first link");
-                }
-
-                let functionValue0 = functionsPerKnot[scheme.out.name];
-                let functionValue1 = functionsPerKnot[(<{name: string, level: string}>scheme.in).name];
-            
-                for(let k = 0; k < functionValue0.length; k++){ // iterating over timesteps
-
-                    prevResult.push(new Array(functionSize));
-
-                    let currentFunctionValue0 = functionValue0[k];
-                    let currentFunctionValue1 = functionValue1[k];
-
-                    for(let j = 0; j < currentFunctionValue0.length; j++){
+        if(!Environment.serverless){
+            if((<IKnot>this._knotSpecification).knot_op != true){
+                this.addMeshFunction(layerManager);
+            }else{ // TODO: knot should not have to retrieve the subknots they should be given
+                let functionsPerKnot: any = {};
     
-                        let operation = (<string>scheme.op).replaceAll(scheme.out.name, currentFunctionValue0[j]+'').replaceAll((<{name: string, level: string}>scheme.in).name, currentFunctionValue1[j]+''); 
-                        
-                        if(linkIndex != 0){
-                            operation = operation.replaceAll("prevResult", prevResult[k][j]+'');
+                for(const scheme of (<IKnot>this._knotSpecification).integration_scheme){
+                    if(functionsPerKnot[scheme.out.name] == undefined){
+                        let knot = this._grammarInterpreter.getKnotById(scheme.out.name);
+    
+                        if(knot == undefined){
+                            throw Error("Could not retrieve knot that composes knot_op "+this._knotSpecification.id);
                         }
     
-                        prevResult[k][j] = eval(operation); // TODO deal with security problem
+                        functionsPerKnot[scheme.out.name] = layerManager.getAbstractDataFromLink(knot.integration_scheme);
+                    }
+    
+                    if(scheme.in != undefined && functionsPerKnot[<string>scheme.in.name] == undefined){
+                        let knot = this._grammarInterpreter.getKnotById(<string>scheme.in.name);
+    
+                        if(knot == undefined){
+                            throw Error("Could not retrieve knot that composes knot_op "+this._knotSpecification.id);
+                        }
+    
+                        functionsPerKnot[<string>scheme.in.name] = layerManager.getAbstractDataFromLink(knot.integration_scheme);
+                    }
+    
+                }
+    
+                let functionSize = -1;
+    
+                let functionsPerKnotsKeys = Object.keys(functionsPerKnot);
+    
+                for(const key of functionsPerKnotsKeys){
+                    if(functionSize == -1){
+                        functionSize = functionsPerKnot[key][0].length;
+                    }else if(functionSize != functionsPerKnot[key][0].length){
+                        throw Error("All knots used in knot_op must have the same length");
                     }
                 }
-
-                linkIndex += 1;
+    
+                if(functionSize == -1){
+                    throw Error("Could not retrieve valid function values for knot_op "+this._knotSpecification.id);
+                }
+    
+                let prevResult: number[][] = [];
+    
+                // let prevResult: number[] = new Array(functionSize);
+    
+                let linkIndex = 0;
+    
+                for(const scheme of (<IKnot>this._knotSpecification).integration_scheme){
+                    if(linkIndex == 0 && (<string>scheme.op).includes("prevResult")){
+                        throw Error("It is not possible to access a previous result (prevResult) for the first link");
+                    }
+    
+                    let functionValue0 = functionsPerKnot[scheme.out.name];
+                    let functionValue1 = functionsPerKnot[(<{name: string, level: string}>scheme.in).name];
+                
+                    for(let k = 0; k < functionValue0.length; k++){ // iterating over timesteps
+    
+                        prevResult.push(new Array(functionSize));
+    
+                        let currentFunctionValue0 = functionValue0[k];
+                        let currentFunctionValue1 = functionValue1[k];
+    
+                        for(let j = 0; j < currentFunctionValue0.length; j++){
+        
+                            let operation = (<string>scheme.op).replaceAll(scheme.out.name, currentFunctionValue0[j]+'').replaceAll((<{name: string, level: string}>scheme.in).name, currentFunctionValue1[j]+''); 
+                            
+                            if(linkIndex != 0){
+                                operation = operation.replaceAll("prevResult", prevResult[k][j]+'');
+                            }
+        
+                            prevResult[k][j] = eval(operation); // TODO deal with security problem
+                        }
+                    }
+    
+                    linkIndex += 1;
+                }
+    
+                this._physicalLayer.directAddMeshFunction(prevResult, this._knotSpecification.id);
+    
             }
+        }else{
+            let result: number[][] = [];
 
-            this._physicalLayer.directAddMeshFunction(prevResult, this._knotSpecification.id);
-
+            if((<IExKnot>this._knotSpecification).in_name != undefined){
+                result = layerManager.getValuesExKnot((<IExKnot>this._knotSpecification).out_name, <string>(<IExKnot>this._knotSpecification).in_name);
+            }
+            this._physicalLayer.directAddMeshFunction(result, this._knotSpecification.id);
         }
-
     }
 
     private _getPickingArea(glContext: WebGL2RenderingContext, x: number, y: number, anchorX: number, anchorY: number): {pixelAnchorX: number, pixelAnchorY: number, width: number, height: number}{
