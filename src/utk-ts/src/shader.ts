@@ -1,6 +1,8 @@
 import { Mesh } from "./mesh";
 
 import { IExKnot, IKnot } from "./interfaces";
+import { InteractionType } from "./constants";
+import { ServerlessApi } from "./serverless-api";
 
 export abstract class Shader {
 
@@ -151,6 +153,11 @@ export abstract class Shader {
             throw new Error('Unable to load the shader');
         }
         return shader;
+    }
+
+    protected exportInteractions (colorOrPicked: number[], coordsPerComp: number[], knotId: string) {
+        if(ServerlessApi.interactionCallbacks[knotId] != undefined)        
+            ServerlessApi.interactionCallbacks[knotId](colorOrPicked, coordsPerComp);
     }
 
 }

@@ -13,6 +13,9 @@ import { IExKnot, IKnot } from "./interfaces";
 import { AuxiliaryShaderTriangles } from "./auxiliaryShaderTriangles";
 
 import * as d3_scale from 'd3-scale';
+import { ServerlessApi } from "./serverless-api";
+import { Environment } from "./environment";
+import { InteractionType } from "./constants";
 
 const d3 = require('d3');
 
@@ -292,6 +295,10 @@ export class ShaderSmoothColorMap extends AuxiliaryShaderTriangles {
         
         glContext.bindBuffer(glContext.ARRAY_BUFFER, this._glColorOrPicked);
         if (this._colorOrPickedDirty) {
+            
+            if(Environment.serverless)
+                this.exportInteractions(this._colorOrPicked, this._coordsPerComp, this._currentKnot.id);
+
             glContext.bufferData(
                 glContext.ARRAY_BUFFER, new Float32Array(this._colorOrPicked), glContext.STATIC_DRAW
             );

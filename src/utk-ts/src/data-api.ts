@@ -10,7 +10,7 @@ export abstract class DataApi {
     static carameraParameters: ICameraData | null = null;
     static layers: ILayerData[] | null = null;
     static layersFeature: ILayerFeature[] | null = null;
-    static joinedJsons: {id: string, json: IJoinedJson | IExternalJoinedJson}[] | null = null;
+    static joinedJsons: IJoinedJson[] | IExternalJoinedJson[] | null = null;
     static components: {id: string, json: IMapGrammar | IPlotGrammar}[] | null = null;
 
     /**
@@ -232,9 +232,9 @@ export abstract class DataApi {
             if (DataApi.joinedJsons == null) {
                 throw new Error("joinedJsons needs to be set before calling getJoinedJson");
             } else {
-                for (const joinedJson of DataApi.joinedJsons) {
+                for (const joinedJson of <IExternalJoinedJson[]>DataApi.joinedJsons) {
                     if(joinedJson.id == layerId){
-                        return joinedJson.json;
+                        return joinedJson;
                     }
                 }
                 throw new Error("joinedJson "+layerId+" not found");

@@ -2,26 +2,11 @@ import { Environment } from './environment';
 import { DataApi } from './data-api';
 
 import { ILayerData, IMapGrammar, IPlotGrammar, IJoinedJson, IExternalJoinedJson } from './interfaces';
-
-// export interface IJoinedJson {
-//     joinedLayers: IJoinedLayer[]; // description of the joins with other layers
-//     joinedObjects: IJoinedObjects[]; // description of the relation created with other layers
-// }
+import { InteractionType } from './constants';
 
 export abstract class ServerlessApi {
 
-    static async formatData(layers: ILayerData[], joinedJsons: IExternalJoinedJson[]){
-
-        // console.log("geoJsons", geoJsons);
-        
-        
-        
-        // TODO: parse geoDataFrames
-        // TODO: extract layers
-        // TODO: setLayers
-        // TODO: extract joins
-        // TODO: setJoined
-    }
+    static interactionCallbacks: any = {}; // {[knotId] -> callback} 
 
     static async setComponents(components: {id: string, json: IMapGrammar | IPlotGrammar}[]){
         DataApi.components = components;
@@ -31,8 +16,15 @@ export abstract class ServerlessApi {
         DataApi.layers = layers;
     }
 
-    static async setJoinedJsons(joinedJsons: {id: string, json: IJoinedJson}[]){
+    static async setJoinedJsons(joinedJsons: IJoinedJson[] | IExternalJoinedJson[]){
         DataApi.joinedJsons = joinedJsons;
     }
 
+    static addInteractionCallback = (knotId: string, callback: any) => {
+        if(ServerlessApi.interactionCallbacks[knotId] == undefined){
+            ServerlessApi.interactionCallbacks[knotId] = {}
+        }
+    
+        ServerlessApi.interactionCallbacks[knotId] = callback;
+    }
 }
