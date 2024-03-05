@@ -113,6 +113,16 @@ export class Knot {
         }
     }
 
+    overwriteSelectedElements(externalSelected: number[], viewId: number){
+        for(const shader of this._shaders[viewId]){
+            if(shader instanceof ShaderFlatColorMap || shader instanceof ShaderFlatColorPointsMap || shader instanceof ShaderSmoothColorMap || shader instanceof ShaderSmoothColorMapTex){
+                shader.overwriteSelectedElements(externalSelected);
+            }
+        }
+        // if()
+
+    }
+
     loadShaders(glContext: WebGL2RenderingContext, centroid:number[] | Float32Array = [0,0,0], viewId: number): void {
         this._shaders[viewId] = [];
         const color = MapStyle.getColor(this._physicalLayer.style);

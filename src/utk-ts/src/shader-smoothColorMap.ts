@@ -355,6 +355,22 @@ export class ShaderSmoothColorMap extends AuxiliaryShaderTriangles {
         this._filteredDirty = false;
     }
 
+    public overwriteSelectedElements(externalSelected: number[]){
+        let startIndex = 0;
+
+        for(let i = 0; i < externalSelected.length; i++){
+            let nCoords = this._coordsPerComp[i];
+
+            for(let j = startIndex; j < startIndex+nCoords; j++){
+                this._colorOrPicked[j] = externalSelected[i];
+            }
+
+            startIndex += nCoords;
+        }
+
+        this._colorOrPickedDirty = true;
+    }
+
     public setHighlightElements(coordinates: number[], value: boolean): void {
 
         for(const coordIndex of coordinates){

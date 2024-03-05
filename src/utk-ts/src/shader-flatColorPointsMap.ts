@@ -12,6 +12,7 @@ import fsFlatColorMap from './shaders/flatColorPointsMap.fs';
 import { IExKnot, IKnot } from "./interfaces";
 
 import * as d3_scale from 'd3-scale';
+import { Environment } from "./environment";
 
 const d3 = require('d3');
 
@@ -295,6 +296,10 @@ export class ShaderFlatColorPointsMap extends AuxiliaryShaderTriangles {
 
         glContext.bindBuffer(glContext.ARRAY_BUFFER, this._glColorOrPicked);
         if (this._colorOrPickedDirty) {
+
+            if(Environment.serverless)
+                this.exportInteractions(this._colorOrPicked, this._coordsPerComp, this._currentKnot.id);
+
             glContext.bufferData(
                 glContext.ARRAY_BUFFER, new Float32Array(this._colorOrPicked), glContext.STATIC_DRAW
             );
@@ -319,6 +324,22 @@ export class ShaderFlatColorPointsMap extends AuxiliaryShaderTriangles {
         this._functionDirty = false;
         this._colorOrPickedDirty = false;
         this._filteredDirty = false;
+    }
+
+    public overwriteSelectedElements(externalSelected: number[]){
+        let startIndex = 0;
+
+        for(let i = 0; i < externalSelected.length; i++){
+            let nCoords = this._coordsPerComp[i];
+
+            for(let j = startIndex; j < startIndex+nCoords; j++){
+                this._colorOrPicked[j] = externalSelected[i];
+            }
+
+            startIndex += nCoords;
+        }
+
+        this._colorOrPickedDirty = true;
     }
 
     public setHighlightElements(coordinates: number[], value: boolean): void {

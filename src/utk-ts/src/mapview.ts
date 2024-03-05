@@ -464,7 +464,9 @@ class MapView {
             this._canvas.height = displayHeight;
         }
 
-        this._glContext.viewport(0, 0, this._canvas.width, this._canvas.width);
+        const value = Math.max(displayWidth, displayHeight);
+
+        this._glContext.viewport(0, 0, value, value);
         this._camera.setViewportResolution(this._canvas.width, this._canvas.height);
 
         for (const knot of this._knotManager.knots){

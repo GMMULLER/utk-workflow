@@ -13,6 +13,7 @@ import {cross, rotateYMatrix, rotateZMatrix, angle, radians, multiplyMatrices, t
 import { IExKnot, IKnot } from "./interfaces";
 
 import * as d3_scale from 'd3-scale';
+import { Environment } from "./environment";
 
 const mathjs = require('mathjs');
 const d3 = require('d3');
@@ -35,6 +36,7 @@ export class ShaderSmoothColorMapTex extends AuxiliaryShader {
     protected _orientedEnvelope: number[][][] = [];
     protected _sectionFootprint: number[][][] = [];
     protected _footprintPlaneHeightByCoord: number[] = []; // for each coordinate stores, if there is any, the height of the footprint plot that intersects the building
+    protected _coordsPerComp: number[] = [];
 
     protected _lastCode: number = -1; // last code used to identify a plot
 
@@ -145,6 +147,8 @@ export class ShaderSmoothColorMapTex extends AuxiliaryShader {
         this._minHeights = mesh.getMinHeightsVBO();
         this._orientedEnvelope = mesh.getOrientedEnvelopesVBO(centroid);
         this._sectionFootprint = mesh.getSectionFootprintVBO(centroid);
+
+        this._coordsPerComp = mesh.getCoordsPerComp();
 
         this._idsLength = mesh.idsLength();
 
@@ -345,6 +349,10 @@ export class ShaderSmoothColorMapTex extends AuxiliaryShader {
 
         glContext.bindBuffer(glContext.ARRAY_BUFFER, this._glColorOrPicked);
         if (this._colorOrPickedDirty) {
+
+            if(Environment.serverless)
+                this.exportInteractions(this._colorOrPicked, this._coordsPerComp, this._currentKnot.id);
+
             glContext.bufferData(
                 glContext.ARRAY_BUFFER, new Float32Array(this._colorOrPicked), glContext.STATIC_DRAW
             );
@@ -1573,6 +1581,22 @@ export class ShaderSmoothColorMapTex extends AuxiliaryShader {
         this._pickedCoordinates = [];
 
         return {indices: abs_surface_indices, coords: abs_surface_coords, functionValues: abs_surface_function, image: texImage, code: this._lastCode};
+    }
+
+    public overwriteSelectedElements(externalSelected: number[]){
+        let startIndex = 0;
+
+        for(let i = 0; i < externalSelected.length; i++){
+            let nCoords = this._coordsPerComp[i];
+
+            for(let j = startIndex; j < startIndex+nCoords; j++){
+                this._colorOrPicked[j] = externalSelected[i];
+            }
+
+            startIndex += nCoords;
+        }
+
+        this._colorOrPickedDirty = true;
     }
 
     /**

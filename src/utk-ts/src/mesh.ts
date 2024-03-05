@@ -589,6 +589,10 @@ export class Mesh {
             }
         }
 
+        if(vbo.length == 0){
+            vbo.push([])
+        }
+
         return vbo;
     }
 

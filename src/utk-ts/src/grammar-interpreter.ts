@@ -28,6 +28,7 @@ import { DataApi } from './data-api';
 class GrammarInterpreter {
 
     protected _grammar: IMasterGrammar;
+    protected _maps: any[] = []; // MapView[]
     protected _preProcessedGrammar: IMasterGrammar;
     protected _components_grammar: {id: string, originalGrammar: (IMapGrammar | IPlotGrammar), grammar: (IMapGrammar | IPlotGrammar | undefined), position: (IComponentPosition | undefined)}[] = [];
     protected _lastValidationTimestep: number;
@@ -188,6 +189,10 @@ class GrammarInterpreter {
         let allKnotsIds: string[] = [];
     
         if(!Environment.serverless){
+
+            if(grammar.ex_knots != undefined)
+                throw Error("External knots (ex_knots) can only be used in the serverless mode");
+
             for(const knot of grammar.knots){
                 if(allKnotsIds.includes(knot.id)){
                     throw Error("Duplicated knot id");
@@ -234,6 +239,9 @@ class GrammarInterpreter {
     
                 }
             }
+        }else{
+            if(grammar.knots != undefined && grammar.knots.length > 0)
+                throw Error("Internal knots (knots) can not be used in the serverless mode");
         }
     
         return true;
@@ -260,6 +268,16 @@ class GrammarInterpreter {
         }
 
         return true;
+    }
+
+    // Overwrites selected elements of specific physical layer
+    // externalSelected has elements selected in the OBJECT level. 
+    public overwriteSelectedElements(externalSelected: number[], layerId: string){  
+        for(let i = 0; i < this._maps.length; i++){
+            let map = this._maps[i];
+            this.knotManager.overwriteSelectedElements(externalSelected, layerId, i);
+            map.render();
+        }
     }
 
     public async processGrammar(grammar: IMasterGrammar){
@@ -525,6 +543,7 @@ class GrammarInterpreter {
                     }
                 }
 
+                this._maps.push(map);
                 map.render() // TODO: have multiple maps not a singleton
             }
         }

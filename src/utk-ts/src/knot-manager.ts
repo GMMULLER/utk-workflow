@@ -43,6 +43,14 @@ export class KnotManager {
         }
     }
 
+    overwriteSelectedElements(externalSelected: number[], layerId: string, viewId: number){
+        for(const knot of this._knots){
+            if(knot.physicalLayer.id == layerId){
+                knot.overwriteSelectedElements(externalSelected, viewId);
+            }
+        }
+    }
+
     getKnotById(knotId: string){
         for(const knot of this._knots){
             if(knot.id == knotId){

@@ -13,6 +13,7 @@ import { AuxiliaryShaderTriangles } from "./auxiliaryShaderTriangles";
 import { IExKnot, IKnot } from "./interfaces";
 
 import * as d3_scale from 'd3-scale';
+import { Environment } from "./environment";
 
 const d3 = require('d3');
 
@@ -36,6 +37,7 @@ export class ShaderFlatColorMap extends AuxiliaryShaderTriangles {
     protected _glFunction: WebGLBuffer | null = null;
     protected _glIndices: WebGLBuffer | null = null;
     protected _glFiltered: WebGLBuffer | null = null;
+    protected _glColorOrPicked: WebGLBuffer | null = null;
 
     // Data has chaged
     protected _coordsDirty: boolean = false;
@@ -231,6 +233,9 @@ export class ShaderFlatColorMap extends AuxiliaryShaderTriangles {
         this._filteredId = glContext.getAttribLocation(this._shaderProgram, 'inFiltered');
         this._glFiltered = glContext.createBuffer();
 
+        this._colorOrPickedId = glContext.getAttribLocation(this._shaderProgram, 'inColorOrPicked');
+        this._glColorOrPicked = glContext.createBuffer();
+
         // Creates the coords id.
         this._functionId = glContext.getAttribLocation(this._shaderProgram, 'funcValues');
         // Creates the function id
@@ -268,6 +273,20 @@ export class ShaderFlatColorMap extends AuxiliaryShaderTriangles {
         glContext.vertexAttribPointer(this._filteredId, 1, glContext.FLOAT, false, 0, 0);
         glContext.enableVertexAttribArray(this._filteredId); 
 
+        glContext.bindBuffer(glContext.ARRAY_BUFFER, this._glColorOrPicked);
+        if (this._colorOrPickedDirty) {
+            
+            if(Environment.serverless)
+                this.exportInteractions(this._colorOrPicked, this._coordsPerComp, this._currentKnot.id);
+
+            glContext.bufferData(
+                glContext.ARRAY_BUFFER, new Float32Array(this._colorOrPicked), glContext.STATIC_DRAW
+            );
+        }
+
+        glContext.vertexAttribPointer(this._colorOrPickedId, 1, glContext.FLOAT, false, 0, 0);
+        glContext.enableVertexAttribArray(this._colorOrPickedId); 
+
         // binds the position buffer
         glContext.bindBuffer(glContext.ARRAY_BUFFER, this._glFunction);
         // send data to gpu
@@ -291,6 +310,22 @@ export class ShaderFlatColorMap extends AuxiliaryShaderTriangles {
         this._coordsDirty = false;
         this._functionDirty = false;
         this._filteredDirty = false;
+    }
+
+    public overwriteSelectedElements(externalSelected: number[]){
+        let startIndex = 0;
+
+        for(let i = 0; i < externalSelected.length; i++){
+            let nCoords = this._coordsPerComp[i];
+
+            for(let j = startIndex; j < startIndex+nCoords; j++){
+                this._colorOrPicked[j] = externalSelected[i];
+            }
+
+            startIndex += nCoords;
+        }
+
+        this._colorOrPickedDirty = true;
     }
 
     public setHighlightElements(coordinates: number[], value: boolean): void {

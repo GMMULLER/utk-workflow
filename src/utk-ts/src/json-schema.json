@@ -154,6 +154,25 @@
                 "required": ["id", "integration_scheme"]
             }
         },
+        "ex_knots": {
+            "description": "Optional knots for externally joined layers",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "out_name": {
+                        "type": "string"
+                    },
+                    "in_name": {
+                        "type": "string"
+                    }
+                },
+                "required": ["id", "out_name"]
+            }
+        },
         "grid": {
             "description": "Defines how the screen should be divided",
             "type": "object",
