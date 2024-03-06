@@ -6,6 +6,7 @@ import { DataApi } from './data-api';
 import light from './styles/light.json';
 // @ts-ignore
 import dark from './styles/dark.json'; 
+import { ServerlessApi } from './serverless-api';
 
 export class MapStyle {
     // default color map
@@ -73,7 +74,7 @@ export class MapStyle {
         }
         else if (typeof style === 'string') {
             // Load style from path
-            const custom = await DataApi.getCustomStyle(style);
+            const custom = await DataApi.getCustomStyle(style, new ServerlessApi());
             styleObj = custom;
         }
         else {

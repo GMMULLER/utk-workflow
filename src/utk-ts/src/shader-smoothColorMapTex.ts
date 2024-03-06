@@ -106,8 +106,8 @@ export class ShaderSmoothColorMapTex extends AuxiliaryShader {
 
     protected _filtered: number[] = [];
 
-    constructor(glContext: WebGL2RenderingContext, colorMap: string = "interpolateReds", range: number[] = [0, 1], domain: number[] = [], scale: string = "scaleLinear", colorMapReverse: boolean = false) {
-        super(vsSmoothColorMap, fsSmoothColorMap, glContext);
+    constructor(glContext: WebGL2RenderingContext, grammarInterpreter: any, colorMap: string = "interpolateReds", range: number[] = [0, 1], domain: number[] = [], scale: string = "scaleLinear", colorMapReverse: boolean = false) {
+        super(vsSmoothColorMap, fsSmoothColorMap, glContext, grammarInterpreter);
 
         // saves the layer color
         this._colorMap = colorMap;

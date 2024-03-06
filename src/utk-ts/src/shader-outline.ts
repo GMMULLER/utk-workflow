@@ -73,8 +73,8 @@ export class ShaderOutline extends Shader {
 
     protected _filtered: number[] = [];
 
-    constructor(glContext: WebGL2RenderingContext) {
-        super(vsOutline, fsOutline, glContext);
+    constructor(glContext: WebGL2RenderingContext, grammarInterpreter: any) {
+        super(vsOutline, fsOutline, glContext, grammarInterpreter);
 
         // create the shader variables    
         this.createUniforms(glContext);

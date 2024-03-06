@@ -1,30 +1,34 @@
-import { Environment } from './environment';
-import { DataApi } from './data-api';
+import { ILayerData, IMapGrammar, IPlotGrammar, IJoinedJson, IExternalJoinedJson, IMasterGrammar, IMapStyle, ICameraData, ILayerFeature } from './interfaces';
 
-import { ILayerData, IMapGrammar, IPlotGrammar, IJoinedJson, IExternalJoinedJson } from './interfaces';
-import { InteractionType } from './constants';
+export class ServerlessApi {
 
-export abstract class ServerlessApi {
+    public mapData: IMasterGrammar | IMapGrammar | IPlotGrammar | null = null;
+    public mapStyle: IMapStyle | null = null;
+    public carameraParameters: ICameraData | null = null;
+    public layers: ILayerData[] | null = null;
+    public layersFeature: ILayerFeature[] | null = null;
+    public joinedJsons: IJoinedJson[] | IExternalJoinedJson[] | null = null;
+    public components: {id: string, json: IMapGrammar | IPlotGrammar}[] | null = null;
 
-    static interactionCallbacks: any = {}; // {[knotId] -> callback} 
+    public interactionCallbacks: any = {}; // {[knotId] -> callback} 
 
-    static async setComponents(components: {id: string, json: IMapGrammar | IPlotGrammar}[]){
-        DataApi.components = components;
+    public async setComponents(components: {id: string, json: IMapGrammar | IPlotGrammar}[]){
+        this.components = components;
     }
 
-    static async setLayers(layers: ILayerData[]){
-        DataApi.layers = layers;
+    public async setLayers(layers: ILayerData[]){
+        this.layers = layers;
     }
 
-    static async setJoinedJsons(joinedJsons: IJoinedJson[] | IExternalJoinedJson[]){
-        DataApi.joinedJsons = joinedJsons;
+    public async setJoinedJsons(joinedJsons: IJoinedJson[] | IExternalJoinedJson[]){
+        this.joinedJsons = joinedJsons;
     }
 
-    static addInteractionCallback = (knotId: string, callback: any) => {
-        if(ServerlessApi.interactionCallbacks[knotId] == undefined){
-            ServerlessApi.interactionCallbacks[knotId] = {}
+    public addInteractionCallback = (knotId: string, callback: any) => {
+        if(this.interactionCallbacks[knotId] == undefined){
+            this.interactionCallbacks[knotId] = {}
         }
     
-        ServerlessApi.interactionCallbacks[knotId] = callback;
+        this.interactionCallbacks[knotId] = callback;
     }
 }

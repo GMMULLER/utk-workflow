@@ -13,9 +13,7 @@ import { IExKnot, IKnot } from "./interfaces";
 import { AuxiliaryShaderTriangles } from "./auxiliaryShaderTriangles";
 
 import * as d3_scale from 'd3-scale';
-import { ServerlessApi } from "./serverless-api";
 import { Environment } from "./environment";
-import { InteractionType } from "./constants";
 
 const d3 = require('d3');
 
@@ -78,8 +76,8 @@ export class ShaderSmoothColorMap extends AuxiliaryShaderTriangles {
     protected _currentPickedElement: number[]; // stores the indices of the currently picked elements
     protected _filtered: number[] = [];
 
-    constructor(glContext: WebGL2RenderingContext, colorMap: string = "interpolateReds", range: number[] = [0, 1], domain: number[] = [], scale: string = "scaleLinear") {
-        super(vsSmoothColorMap, fsSmoothColorMap, glContext);
+    constructor(glContext: WebGL2RenderingContext, grammarInterpreter: any, colorMap: string = "interpolateReds", range: number[] = [0, 1], domain: number[] = [], scale: string = "scaleLinear") {
+        super(vsSmoothColorMap, fsSmoothColorMap, glContext, grammarInterpreter);
 
         // saves the layer color
         this._colorMap = colorMap;

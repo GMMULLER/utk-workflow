@@ -54,9 +54,8 @@ export class ShaderColorPoints extends Shader {
     // Color map texture
     protected _texColorMap: WebGLTexture | null;
 
-    constructor(glContext: WebGL2RenderingContext, colorMap: string = "interpolateReds", range: number[] = [0, 1], domain: number[] = [], scale: string = "scaleLinear") {
-        super(vsColorPoints, fsColorPoints, glContext);
-
+    constructor(glContext: WebGL2RenderingContext, grammarInterpreter: any, colorMap: string = "interpolateReds", range: number[] = [0, 1], domain: number[] = [], scale: string = "scaleLinear") {
+        super(vsColorPoints, fsColorPoints, glContext, grammarInterpreter);
         // saves the layer color
         // this._globalColor = color;
 

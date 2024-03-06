@@ -2,22 +2,15 @@ import { Environment } from './environment';
 import { DataLoader } from './data-loader';
 
 import { ICameraData, ILayerFeature, ILayerData, IMapStyle, IMasterGrammar, IMapGrammar, IPlotGrammar, IJoinedJson, IExternalJoinedJson } from './interfaces';
+import { ServerlessApi } from './serverless-api';
 
 export abstract class DataApi {
-
-    static mapData: IMasterGrammar | IMapGrammar | IPlotGrammar | null = null;
-    static mapStyle: IMapStyle | null = null;
-    static carameraParameters: ICameraData | null = null;
-    static layers: ILayerData[] | null = null;
-    static layersFeature: ILayerFeature[] | null = null;
-    static joinedJsons: IJoinedJson[] | IExternalJoinedJson[] | null = null;
-    static components: {id: string, json: IMapGrammar | IPlotGrammar}[] | null = null;
 
     /**
      * Load all layers
      * @param {string} index The layers index file
      */
-    static async getMapData(index: string): Promise<IMasterGrammar | IMapGrammar | IPlotGrammar> {
+    static async getMapData(index: string, serverlessApi: ServerlessApi): Promise<IMasterGrammar | IMapGrammar | IPlotGrammar> {
 
         if (!Environment.serverless) {
             const url = `${Environment.backend}/files/${index}`;
@@ -26,10 +19,10 @@ export abstract class DataApi {
             return <IMasterGrammar | IMapGrammar | IPlotGrammar>datasets;
 
         } else {
-            if (DataApi.mapData == null) {
+            if (serverlessApi.mapData == null) {
                 throw new Error("map data needs to be set before calling getMapData");
             } else {
-                return DataApi.mapData;
+                return serverlessApi.mapData;
             }
         }
     }
@@ -37,16 +30,16 @@ export abstract class DataApi {
     /**
      * @param {string} componentId The id of the component
      */
-    static async getComponentData(componentId: string): Promise<IMapGrammar | IPlotGrammar> {
+    static async getComponentData(componentId: string, serverlessApi: ServerlessApi): Promise<IMapGrammar | IPlotGrammar> {
         if (!Environment.serverless) {
             const url = `${Environment.backend}/files/${componentId}.json`;
             let component_grammar = <IMapGrammar | IPlotGrammar> await DataLoader.getJsonData(url);
             return component_grammar
         } else {
-            if (DataApi.components == null) {
+            if (serverlessApi.components == null) {
                 throw new Error("components needs to be set before calling getComponentData");
             } else {
-                for (const component of DataApi.components) {
+                for (const component of serverlessApi.components) {
                     if(component.id == componentId){
                         return component.json;
                     }
@@ -60,17 +53,17 @@ export abstract class DataApi {
      * Load a custom style
      * @param {string} style The style file
      */
-    static async getCustomStyle(style: string): Promise<IMapStyle> {
+    static async getCustomStyle(style: string, serverlessApi: ServerlessApi): Promise<IMapStyle> {
         if (!Environment.serverless) {
             const url = `${Environment.backend}/files/${style}.json`;
 
             const custom = <IMapStyle>await DataLoader.getJsonData(url);
             return <IMapStyle>custom;
         } else {
-            if (DataApi.mapStyle == null) {
+            if (serverlessApi.mapStyle == null) {
                 throw new Error("map style needs to be set before calling getCustomStyle");
             } else {
-                return DataApi.mapStyle;
+                return serverlessApi.mapStyle;
             }
         }
     }
@@ -79,17 +72,17 @@ export abstract class DataApi {
      * Load the camera
      * @param {string} camera The camera file
      */
-    static async getCameraParameters(camera: string): Promise<ICameraData> {
+    static async getCameraParameters(camera: string, serverlessApi: ServerlessApi): Promise<ICameraData> {
         if (!Environment.serverless) {
             const url = `${Environment.backend}/files/${camera}.json`;
 
             const params = <ICameraData>await DataLoader.getJsonData(url);
             return params;
         } else {
-            if (DataApi.carameraParameters == null) {
+            if (serverlessApi.carameraParameters == null) {
                 throw new Error("camera parameter needs to be set before calling getCameraParameters");
             } else {
-                return DataApi.carameraParameters;
+                return serverlessApi.carameraParameters;
             }
         }
     }
@@ -98,7 +91,7 @@ export abstract class DataApi {
      * Gets the layer data
      * @param {string} layerId the layer data
      */
-    static async getLayer(layerId: string): Promise<ILayerData> {
+    static async getLayer(layerId: string, serverlessApi: ServerlessApi): Promise<ILayerData> {
 
         if (!Environment.serverless) {
             const url_base = `${Environment.backend}/files/${layerId}.json`;
@@ -164,10 +157,10 @@ export abstract class DataApi {
 
             return base_feature;
         } else {
-            if (DataApi.layers == null) {
+            if (serverlessApi.layers == null) {
                 throw new Error("layers needs to be set before calling getLayer");
             } else {
-                for (const layer of DataApi.layers) {
+                for (const layer of serverlessApi.layers) {
                     if(layer.id == layerId){
                         return layer;
                     }
@@ -183,17 +176,17 @@ export abstract class DataApi {
      * Gets the layer data
      * @param {string} layerId the layer data
      */
-    static async getLayerFeature(layerId: string): Promise<ILayerFeature[]> {
+    static async getLayerFeature(layerId: string, serverlessApi: ServerlessApi): Promise<ILayerFeature[]> {
         if (!Environment.serverless) {
             const url = `${Environment.backend}/files/${layerId}.json`;
 
             const feature = <ILayerFeature[]>await DataLoader.getJsonData(url);
             return feature;
         }else{
-            if (DataApi.layersFeature == null) {
+            if (serverlessApi.layersFeature == null) {
                 throw new Error("layersFeature needs to be set before calling getLayerFeature");
             } else {
-                return DataApi.layersFeature;
+                return serverlessApi.layersFeature;
             }
         }
     }
@@ -222,17 +215,17 @@ export abstract class DataApi {
     //     return feature;
     // }
 
-    static async getJoinedJson(layerId: string) {
+    static async getJoinedJson(layerId: string, serverlessApi: ServerlessApi) {
         if (!Environment.serverless) {
             const url = `${Environment.backend}/files/${layerId + "_joined"}.json`;
 
             const joinedJson = <IJoinedJson>await DataLoader.getJsonData(url);
             return joinedJson;
         } else {
-            if (DataApi.joinedJsons == null) {
+            if (serverlessApi.joinedJsons == null) {
                 throw new Error("joinedJsons needs to be set before calling getJoinedJson");
             } else {
-                for (const joinedJson of <IExternalJoinedJson[]>DataApi.joinedJsons) {
+                for (const joinedJson of <IExternalJoinedJson[]>serverlessApi.joinedJsons) {
                     if(joinedJson.id == layerId){
                         return joinedJson;
                     }

@@ -1,6 +1,6 @@
 /// <reference types="@types/webgl2" />
 
-import { ICameraData, IConditionBlock, IMasterGrammar, IKnotVisibility, IKnot, IMapGrammar, IPlotGrammar, IComponentPosition, IGenericWidget, ILayerData, IExKnot, ILinkDescription } from './interfaces';
+import { ICameraData, IConditionBlock, IMasterGrammar, IKnotVisibility, IKnot, IMapGrammar, IPlotGrammar, IComponentPosition, IGenericWidget, ILayerData, IExKnot, ILinkDescription, IExternalJoinedJson } from './interfaces';
 import { PlotArrangementType, OperationType, SpatialRelationType, LevelType, ComponentIdentifier, WidgetType, GrammarType} from './constants';
 import { Knot } from './knot';
 import { MapViewFactory } from './mapview';
@@ -24,6 +24,7 @@ import { KnotManager } from './knot-manager';
 import { PlotManager } from './plot-manager';
 import { Layer } from './layer';
 import { DataApi } from './data-api';
+import { ServerlessApi } from './serverless-api';
 
 class GrammarInterpreter {
 
@@ -45,6 +46,7 @@ class GrammarInterpreter {
     protected _ajv_map: any;
     protected _ajv_plots: any;
     protected _viewReactElem: any;
+    protected _serverlessApi: ServerlessApi;
 
     protected _cameraUpdateCallback: any;
 
@@ -68,11 +70,21 @@ class GrammarInterpreter {
         return this._plotManager;
     }
 
-    resetGrammarInterpreter(grammar: IMasterGrammar, mainDiv: HTMLElement) {
+    get serverlessApi(): ServerlessApi{
+        return this._serverlessApi;
+    }
+
+    resetGrammarInterpreter(grammar: IMasterGrammar, mainDiv: HTMLElement, jsonLayers: ILayerData[] = [], joinedJsons: IExternalJoinedJson[] = [], components: {id: string, json: IMapGrammar | IPlotGrammar}[] = [], interactionCallbacks: {knotId: string, callback: any}[] = []) {
+
+        if(Environment.serverless){
+            this._serverlessApi = new ServerlessApi();
+            this.setServerlessApi(jsonLayers, joinedJsons, components, interactionCallbacks);
+        }
 
         this._components_grammar = [];
         this._components = [];
         this._maps_widgets = [];
+        this._maps = [];
 
         this._layerManager = new LayerManager(this);
         this._knotManager = new KnotManager();
@@ -88,6 +100,24 @@ class GrammarInterpreter {
         this._frontEndCallback = null;
         this._mainDiv = mainDiv;
         this.processGrammar(grammar);
+    }
+
+    setServerlessApi(jsonLayers: ILayerData[] = [], joinedJsons: IExternalJoinedJson[] = [], components: {id: string, json: IMapGrammar | IPlotGrammar}[] = [], interactionCallbacks: {knotId: string, callback: any}[] = []){
+        if(jsonLayers.length > 0)
+            this.serverlessApi.setLayers(jsonLayers);
+        
+        if(joinedJsons.length > 0)
+            this.serverlessApi.setJoinedJsons(joinedJsons);
+    
+        if(components.length > 0)
+            this.serverlessApi.setComponents(components);
+
+        if(interactionCallbacks.length > 0){
+            for(const interactionCallback of interactionCallbacks){
+                this.serverlessApi.addInteractionCallback(interactionCallback.knotId, interactionCallback.callback)
+            }
+        }
+
     }
  
     /**
@@ -302,7 +332,7 @@ class GrammarInterpreter {
             
             for(const component of grammar.components){
 
-                let component_grammar = <IMapGrammar | IPlotGrammar> await DataApi.getComponentData(component.id);
+                let component_grammar = <IMapGrammar | IPlotGrammar> await DataApi.getComponentData(component.id, this._serverlessApi);
 
                 this.updateComponentGrammar(component_grammar, component);
             }
@@ -400,7 +430,7 @@ class GrammarInterpreter {
         if (!layer) { return; }
 
         if(joined){
-            let joinedJson = await DataApi.getJoinedJson(layer.id);
+            let joinedJson = await DataApi.getJoinedJson(layer.id, this._serverlessApi);
             if(joinedJson)
                 layer.setJoinedJson(joinedJson);
         }
@@ -441,7 +471,7 @@ class GrammarInterpreter {
                 let element = layers[i];
     
                 // loads from file if not provided
-                const layer = await DataApi.getLayer(element);
+                const layer = await DataApi.getLayer(element, this._serverlessApi);
     
                 // adds the new layer
                 await this.addLayer(layer, joinedList[i]);
@@ -465,7 +495,7 @@ class GrammarInterpreter {
         
                     let element = layers[i];
         
-                    const layer = await DataApi.getLayer(element);
+                    const layer = await DataApi.getLayer(element, this._serverlessApi);
         
                     // adds the new layer
                     await this.addLayer(layer, joinedList[i]);

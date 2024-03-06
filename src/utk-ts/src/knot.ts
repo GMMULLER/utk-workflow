@@ -147,22 +147,22 @@ export class Knot {
             let shader = undefined;
             switch (type) {
                 case RenderStyle.FLAT_COLOR:
-                    shader = new ShaderFlatColor(glContext, color);
+                    shader = new ShaderFlatColor(glContext, color, this._grammarInterpreter);
                 break;
                 case RenderStyle.FLAT_COLOR_MAP:
-                    shader = new ShaderFlatColorMap(glContext, this._cmap, this._range, this._domain, this._scale);
+                    shader = new ShaderFlatColorMap(glContext, this._grammarInterpreter, this._cmap, this._range, this._domain, this._scale);
                 break;
                 case RenderStyle.FLAT_COLOR_POINTS_MAP:
-                    shader = new ShaderFlatColorPointsMap(glContext, this._cmap, this._range, this._domain, this._scale);
+                    shader = new ShaderFlatColorPointsMap(glContext, this._grammarInterpreter, this._cmap, this._range, this._domain, this._scale);
                 break;
                 case RenderStyle.SMOOTH_COLOR:
-                    shader = new ShaderSmoothColor(glContext, color);
+                    shader = new ShaderSmoothColor(glContext, color, this._grammarInterpreter);
                 break;
                 case RenderStyle.SMOOTH_COLOR_MAP:
-                    shader = new ShaderSmoothColorMap(glContext, this._cmap, this._range, this._domain, this._scale);
+                    shader = new ShaderSmoothColorMap(glContext, this._grammarInterpreter, this._cmap, this._range, this._domain, this._scale);
                 break;
                 case RenderStyle.SMOOTH_COLOR_MAP_TEX:
-                    shader = new ShaderSmoothColorMapTex(glContext, this._cmap, this._range, this._domain, this._scale);
+                    shader = new ShaderSmoothColorMapTex(glContext, this._grammarInterpreter, this._cmap, this._range, this._domain, this._scale);
                 break;
                 case RenderStyle.PICKING: 
 
@@ -176,9 +176,9 @@ export class Knot {
                         if(auxShader && auxShader instanceof AuxiliaryShaderTriangles){
 
                             if(this._physicalLayer instanceof TrianglesLayer){
-                                shader = new ShaderPickingTriangles(glContext, auxShader);
+                                shader = new ShaderPickingTriangles(glContext, auxShader, this._grammarInterpreter);
                             }else{
-                                shader = new ShaderPickingPoints(glContext, auxShader);
+                                shader = new ShaderPickingPoints(glContext, auxShader, this._grammarInterpreter);
                             }
 
                         }else{
@@ -192,7 +192,7 @@ export class Knot {
                         }
     
                         if(auxShader && auxShader instanceof AuxiliaryShader){
-                            shader = new ShaderPicking(glContext, auxShader);
+                            shader = new ShaderPicking(glContext, auxShader, this._grammarInterpreter);
                         }else{
                             throw new Error("The shader picking needs an auxiliary shader. The auxiliary shader is the one right before (order matters) shader picking in renderStyle array.");
                         }
@@ -200,16 +200,16 @@ export class Knot {
 
                 break;
                 case RenderStyle.ABSTRACT_SURFACES:
-                    shader = new ShaderAbstractSurface(glContext);
+                    shader = new ShaderAbstractSurface(glContext, this._grammarInterpreter);
                 break;
                 case RenderStyle.COLOR_POINTS:
-                    shader = new ShaderColorPoints(glContext, this._cmap, this._range, this._domain, this._scale);
+                    shader = new ShaderColorPoints(glContext, this._grammarInterpreter, this._cmap, this._range, this._domain, this._scale);
                 break;
                 case RenderStyle.FLAT_COLOR_POINTS:
-                    shader = new ShaderFlatColorPoints(glContext, color);
+                    shader = new ShaderFlatColorPoints(glContext, color, this._grammarInterpreter);
                 break;
                 default:
-                    shader = new ShaderFlatColor(glContext, color);
+                    shader = new ShaderFlatColor(glContext, color, this._grammarInterpreter);
                 break;
             }
 

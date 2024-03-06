@@ -49,9 +49,8 @@ export class ShaderAbstractSurface extends Shader{
 
     protected _filtered: number[] = [];
 
-
-    constructor(glContext: WebGL2RenderingContext) {
-        super(vsAbsSurface, fsAbsSurface, glContext);
+    constructor(glContext: WebGL2RenderingContext, grammarInterpreter: any) {
+        super(vsAbsSurface, fsAbsSurface, glContext, grammarInterpreter);
 
         // create the shader variables    
         this.createUniforms(glContext);

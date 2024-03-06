@@ -86,8 +86,8 @@ export class ShaderPicking extends Shader {
      * 
      * @param {AuxiliaryShader} auxiliaryShader The shader responsible for receiving picking data
      */
-    constructor(glContext: WebGL2RenderingContext, auxiliaryShader: AuxiliaryShader) {
-        super(vsPicking, fsPicking, glContext);
+    constructor(glContext: WebGL2RenderingContext, auxiliaryShader: AuxiliaryShader, grammarInterpreter: any) {
+        super(vsPicking, fsPicking, glContext, grammarInterpreter);
 
         this._auxiliaryShader = auxiliaryShader;
 

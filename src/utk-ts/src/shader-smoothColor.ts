@@ -42,8 +42,8 @@ export class ShaderSmoothColor extends Shader {
 
     protected _filtered: number[] = [];
 
-    constructor(glContext: WebGL2RenderingContext, color: number[]) {
-        super(vsSmoothColor, fsSmoothColor, glContext);
+    constructor(glContext: WebGL2RenderingContext, color: number[], grammarInterpreter: any) {
+        super(vsSmoothColor, fsSmoothColor, glContext, grammarInterpreter);
 
         // saves the layer color
         this._globalColor = color;

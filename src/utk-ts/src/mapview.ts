@@ -334,7 +334,7 @@ class MapView {
      */
     async initCamera(camera: ICameraData | string): Promise<void> {
         // load the index file and its layers
-        const params = typeof camera === 'string' ? await DataApi.getCameraParameters(camera) : camera;
+        const params = typeof camera === 'string' ? await DataApi.getCameraParameters(camera, this._grammarInterpreter.serverlessApi) : camera;
 
         // sets the camera
         this._camera = CameraFactory.getInstance();

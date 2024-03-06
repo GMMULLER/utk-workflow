@@ -9,6 +9,7 @@ export abstract class Shader {
     // layer's shader
     protected _shaderProgram: WebGLShader;
     protected _currentKnot: IKnot | IExKnot; // current knot supplying abstract data for this layer
+    protected _grammarInterpreter: any;
 
     /**
      * Default constructor
@@ -16,8 +17,9 @@ export abstract class Shader {
      * @param fsSource 
      * @param glContext 
      */
-    constructor(vsSource: string, fsSource: string, glContext: WebGL2RenderingContext) {
+    constructor(vsSource: string, fsSource: string, glContext: WebGL2RenderingContext, grammarInterpreter: any) {
         this.initShaderProgram(vsSource, fsSource, glContext);  
+        this._grammarInterpreter = grammarInterpreter;
     }
 
     get currentKnot(): IKnot | IExKnot{
@@ -156,8 +158,8 @@ export abstract class Shader {
     }
 
     protected exportInteractions (colorOrPicked: number[], coordsPerComp: number[], knotId: string) {
-        if(ServerlessApi.interactionCallbacks[knotId] != undefined)        
-            ServerlessApi.interactionCallbacks[knotId](colorOrPicked, coordsPerComp);
+        if(this._grammarInterpreter.serverlessApi.interactionCallbacks[knotId] != undefined)        
+            this._grammarInterpreter.serverlessApi.interactionCallbacks[knotId](colorOrPicked, coordsPerComp);
     }
 
 }

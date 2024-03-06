@@ -68,8 +68,8 @@ export class ShaderPickingPoints extends Shader {
      * 
      * @param {AuxiliaryShaderTriangles} auxiliaryShaderTriangles The shader responsible for receiving picking data
      */
-    constructor(glContext: WebGL2RenderingContext, auxiliaryShaderTriangles: AuxiliaryShaderTriangles) {
-        super(vsPicking, fsPicking, glContext);
+    constructor(glContext: WebGL2RenderingContext, auxiliaryShaderTriangles: AuxiliaryShaderTriangles, grammarInterpreter: any) {
+        super(vsPicking, fsPicking, glContext, grammarInterpreter);
 
         this._auxiliaryShader = auxiliaryShaderTriangles;
 

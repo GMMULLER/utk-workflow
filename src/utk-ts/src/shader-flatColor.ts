@@ -36,8 +36,8 @@ export class ShaderFlatColor extends Shader {
 
     protected _filtered: number[] = [];
 
-    constructor(glContext: WebGL2RenderingContext, color: number[]) {
-        super(vsFlatColor, fsFlatColor, glContext);
+    constructor(glContext: WebGL2RenderingContext, color: number[], grammarInterpreter: any) {
+        super(vsFlatColor, fsFlatColor, glContext, grammarInterpreter);
 
         // saves the layer color
         this._globalColor = color;

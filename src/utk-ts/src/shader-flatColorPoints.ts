@@ -36,8 +36,8 @@ export class ShaderFlatColorPoints extends Shader {
     protected _uWorldOrigin: WebGLUniformLocation | null = null;
     protected _uGlobalColor: WebGLUniformLocation | null = null;
 
-    constructor(glContext: WebGL2RenderingContext, color: number[]) {
-        super(vsFlatColorPoints, fsFlatColorPoints, glContext);
+    constructor(glContext: WebGL2RenderingContext, color: number[], grammarInterpreter: any) {
+        super(vsFlatColorPoints, fsFlatColorPoints, glContext, grammarInterpreter);
 
         // saves the layer color
         this._globalColor = color;
