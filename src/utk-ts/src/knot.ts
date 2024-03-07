@@ -17,7 +17,7 @@ import { AuxiliaryShaderTriangles } from "./auxiliaryShaderTriangles";
 
 import { BuildingsLayer } from "./layer-buildings";
 import { TrianglesLayer } from "./layer-triangles";
-import { IExKnot, IKnot } from "./interfaces";
+import { IExKnot, IKnot, IMapGrammar } from "./interfaces";
 import { LayerManager } from "./layer-manager";
 import { ShaderColorPoints } from "./shader-colorPoints";
 import { ShaderFlatColorPoints } from "./shader-flatColorPoints";
@@ -389,16 +389,15 @@ export class Knot {
     }
 
     // handles map interaction with the knot
-    async interact(glContext: WebGL2RenderingContext, eventName: string, cursorPosition: number[] | null = null, brushingPivot: number[] | null = null, eventObject: any | null = null){
+    async interact(glContext: WebGL2RenderingContext, eventName: string, mapGrammar: IMapGrammar, cursorPosition: number[] | null = null, brushingPivot: number[] | null = null, eventObject: any | null = null){
 
         if(!this._visible || !this._physicalLayer.supportInteraction(eventName)){return;}
 
-        let mapGrammar = this._grammarInterpreter.getMap();
         let interaction = '';
 
         for(let i = 0; i < mapGrammar.knots.length; i++){
             if(mapGrammar.knots[i] == this._id){
-                interaction = mapGrammar.interactions[i];
+                interaction = mapGrammar.interactions[i] as InteractionType;
                 break;
             }
         }
@@ -432,7 +431,7 @@ export class Knot {
         }
 
         if(interaction == InteractionType.PICKING){
-            if(plotArrangements.includes(PlotArrangementType.FOOT_EMBEDDED)){ // TODO: this logic should happen in the context of a specific map
+            if(plotArrangements.includes(PlotArrangementType.FOOT_EMBEDDED)){ 
                 embedFootInteraction = true;
             }
 

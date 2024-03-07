@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
-import {Environment, DataLoader, GrammarInterpreterFactory, InteractionChannel} from 'utk';
-// import {Environment, DataLoader, GrammarInterpreterFactory} from 'utk';
+import {Environment, DataLoader, GrammarInterpreter, InteractionChannel} from 'utk';
 import $ from 'jquery';
 import { IMasterGrammar } from 'utk';
 
@@ -32,8 +31,7 @@ const Map = ({ time, setTime } : MapProps) => {
       const setTimeFunction = setTime;
       InteractionChannel.addToPassedVariables("timestamp", setTimeFunction)
 
-      const grammarInterpreter = GrammarInterpreterFactory.getInstance();
-      grammarInterpreter.resetGrammarInterpreter(grammar, mainDiv);
+      const grammarInterpreter = new GrammarInterpreter("mainInterpreter", grammar, mainDiv);
     }
     createAndRunMap();
 

@@ -3,7 +3,7 @@
 import { ICameraData, IConditionBlock, IMasterGrammar, IKnotVisibility, IKnot, IMapGrammar, IPlotGrammar, IComponentPosition, IGenericWidget, ILayerData, IExKnot, ILinkDescription, IExternalJoinedJson } from './interfaces';
 import { PlotArrangementType, OperationType, SpatialRelationType, LevelType, ComponentIdentifier, WidgetType, GrammarType} from './constants';
 import { Knot } from './knot';
-import { MapViewFactory } from './mapview';
+import { MapView } from './mapview';
 import { Environment } from './environment';
 import { MapRendererContainer } from './reactComponents/MapRenderer';
 
@@ -26,10 +26,9 @@ import { Layer } from './layer';
 import { DataApi } from './data-api';
 import { ServerlessApi } from './serverless-api';
 
-class GrammarInterpreter {
+export class GrammarInterpreter {
 
     protected _grammar: IMasterGrammar;
-    protected _maps: any[] = []; // MapView[]
     protected _preProcessedGrammar: IMasterGrammar;
     protected _components_grammar: {id: string, originalGrammar: (IMapGrammar | IPlotGrammar), grammar: (IMapGrammar | IPlotGrammar | undefined), position: (IComponentPosition | undefined)}[] = [];
     protected _lastValidationTimestep: number;
@@ -47,8 +46,13 @@ class GrammarInterpreter {
     protected _ajv_plots: any;
     protected _viewReactElem: any;
     protected _serverlessApi: ServerlessApi;
+    protected _id: string;
 
     protected _cameraUpdateCallback: any;
+
+    get id(): string{
+        return this._id;
+    }
 
     get layerManager(): LayerManager {
         return this._layerManager;
@@ -74,8 +78,13 @@ class GrammarInterpreter {
         return this._serverlessApi;
     }
 
-    resetGrammarInterpreter(grammar: IMasterGrammar, mainDiv: HTMLElement, jsonLayers: ILayerData[] = [], joinedJsons: IExternalJoinedJson[] = [], components: {id: string, json: IMapGrammar | IPlotGrammar}[] = [], interactionCallbacks: {knotId: string, callback: any}[] = []) {
+    constructor(id: string, grammar: IMasterGrammar, mainDiv: HTMLElement, jsonLayers: ILayerData[] = [], joinedJsons: IExternalJoinedJson[] = [], components: {id: string, json: IMapGrammar | IPlotGrammar}[] = [], interactionCallbacks: {knotId: string, callback: any}[] = []) {
+        this._id = id;
+        
+        this.resetGrammarInterpreter(grammar, mainDiv, jsonLayers, joinedJsons, components, interactionCallbacks);
+    }
 
+    resetGrammarInterpreter(grammar: IMasterGrammar, mainDiv: HTMLElement, jsonLayers: ILayerData[] = [], joinedJsons: IExternalJoinedJson[] = [], components: {id: string, json: IMapGrammar | IPlotGrammar}[] = [], interactionCallbacks: {knotId: string, callback: any}[] = []){
         if(Environment.serverless){
             this._serverlessApi = new ServerlessApi();
             this.setServerlessApi(jsonLayers, joinedJsons, components, interactionCallbacks);
@@ -84,7 +93,6 @@ class GrammarInterpreter {
         this._components_grammar = [];
         this._components = [];
         this._maps_widgets = [];
-        this._maps = [];
 
         this._layerManager = new LayerManager(this);
         this._knotManager = new KnotManager();
@@ -139,7 +147,6 @@ class GrammarInterpreter {
         window.addEventListener("resize", resizeHandler);
     }
 
-    // TODO: it should be possible to create more than one map. So map should not be a singleton
     public initViews(mainDiv: HTMLElement, grammar: IMasterGrammar, originalGrammar: IMasterGrammar, components_grammar: {id: string, originalGrammar: (IMapGrammar | IPlotGrammar), grammar: (IMapGrammar | IPlotGrammar | undefined)}[]){
 
         const getComponentPosition = (grammar: IMasterGrammar, id: string) => {
@@ -160,16 +167,19 @@ class GrammarInterpreter {
 
             if(component.grammar != undefined && comp_position != undefined){
                 if(component.grammar.grammar_type == "MAP"){
-                    this._components.push({id: component.id, type: ComponentIdentifier.MAP, obj: MapViewFactory.getInstance(this, this._layerManager, this._knotManager, components_id), position: comp_position});
+
+                    let new_map = new MapView(this, this._layerManager, this._knotManager, components_id, component.grammar as IMapGrammar);
+
+                    this._components.push({id: component.id, type: ComponentIdentifier.MAP, obj: new_map, position: comp_position});
                     if((<IMapGrammar>component.grammar).widgets != undefined){
                         for(const widget of <IGenericWidget[]>(<IMapGrammar>component.grammar).widgets){
                             if(widget.type == WidgetType.TOGGLE_KNOT){
-                                this._maps_widgets.push({type: WidgetType.TOGGLE_KNOT, obj: MapViewFactory.getInstance(this, this._layerManager, this._knotManager, components_id), grammarDefinition: widget});
+                                this._maps_widgets.push({type: WidgetType.TOGGLE_KNOT, obj: new_map, grammarDefinition: widget});
                             }else if(widget.type == WidgetType.SEARCH){
-                                this._maps_widgets.push({type: WidgetType.SEARCH, obj: MapViewFactory.getInstance(this, this._layerManager, this._knotManager, components_id), grammarDefinition: widget});
+                                this._maps_widgets.push({type: WidgetType.SEARCH, obj: new_map, grammarDefinition: widget});
                             }
                             else if(widget.type == WidgetType.HIDE_GRAMMAR){
-                                this._maps_widgets.push({type: WidgetType.HIDE_GRAMMAR, obj: MapViewFactory.getInstance(this, this._layerManager, this._knotManager, components_id), grammarDefinition: widget});
+                                this._maps_widgets.push({type: WidgetType.HIDE_GRAMMAR, obj: new_map, grammarDefinition: widget});
                             }
                         }
                     }
@@ -303,10 +313,14 @@ class GrammarInterpreter {
     // Overwrites selected elements of specific physical layer
     // externalSelected has elements selected in the OBJECT level. 
     public overwriteSelectedElements(externalSelected: number[], layerId: string){  
-        for(let i = 0; i < this._maps.length; i++){
-            let map = this._maps[i];
-            this.knotManager.overwriteSelectedElements(externalSelected, layerId, i);
-            map.render();
+        for(let i = 0; i < this._components.length; i++){
+            let component = this._components[i];
+
+            if(component.type == ComponentIdentifier.MAP){
+                let map = component.obj;
+                this.knotManager.overwriteSelectedElements(externalSelected, layerId, i);
+                map.render();
+            }
         }
     }
 
@@ -388,7 +402,7 @@ class GrammarInterpreter {
                 knot.processThematicData(this._layerManager); // send thematic data to the mesh of the physical layer TODO: put this inside the constructor of Knot
                 for(let i = 0; i < this._components_grammar.length; i++){
                     if(this._components_grammar[i].grammar != undefined && this._components_grammar[i].grammar?.grammar_type == GrammarType.MAP){
-                        let mapview = MapViewFactory.getInstance(this, this._layerManager, this._knotManager, i) // TODO: have different map intances for each component not a singleton
+                        let mapview = this._components[i].obj;
                         knot.loadShaders(mapview.glContext, mapview.camera.getWorldOrigin(), i); // instantiate the shaders inside the knot
                     }
                 }
@@ -404,7 +418,7 @@ class GrammarInterpreter {
                     knot.processThematicData(this._layerManager); // send thematic data to the mesh of the physical layer TODO: put this inside the constructor of Knot
                     for(let i = 0; i < this._components_grammar.length; i++){
                         if(this._components_grammar[i].grammar != undefined && this._components_grammar[i].grammar?.grammar_type == GrammarType.MAP){
-                            let mapview = MapViewFactory.getInstance(this, this._layerManager, this._knotManager, i) // TODO: have different map intances for each component not a singleton
+                            let mapview = this._components[i].obj;
                             knot.loadShaders(mapview.glContext, mapview.camera.getWorldOrigin(), i); // instantiate the shaders inside the knot
                         }
                     }
@@ -565,7 +579,7 @@ class GrammarInterpreter {
 
         for(let i = 0; i < this._components_grammar.length; i++){
             if(this._components_grammar[i].grammar != undefined && this._components_grammar[i].grammar?.grammar_type == GrammarType.MAP){
-                let map = MapViewFactory.getInstance(this, this._layerManager, this._knotManager, i);
+                let map = this._components[i].obj;
 
                 for(const knot of this._knotManager.knots){ // adding the maps on the track list of the knots that are rendered in that map (used to sync interactions)
                     if(this._components_grammar[i].grammar?.knots.includes(knot.id)){
@@ -573,30 +587,26 @@ class GrammarInterpreter {
                     }
                 }
 
-                this._maps.push(map);
-                map.render() // TODO: have multiple maps not a singleton
+                // this._maps.push(map);
+                map.render() 
             }
         }
 
         let plotsKnotData = this.parsePlotsKnotData(); // parse all plots knots
 
         const setHighlightElementForAll = (knotId: string, elementIndex: number, value: boolean, _this: any) => {
-
             let components_id = 0;
 
             for(const component of _this._components_grammar){
-
                 if(component.grammar?.grammar_type == GrammarType.MAP){
-                    let map = MapViewFactory.getInstance(_this, _this._layerManager, _this._knotManager, components_id);
-                    
+                    let map = component.obj;
+
                     if(component.grammar?.knots.includes(knotId)){
                         map.setHighlightElement(knotId, elementIndex, value, map);
                     }
                 }
-
                 components_id += 1;
             }
-
         }
 
         this._plotManager = new PlotManager("PlotManagerGrammarInterpreter", this.getPlots(), plotsKnotData, {"function": setHighlightElementForAll, "arg": this}); 
@@ -718,7 +728,7 @@ class GrammarInterpreter {
     public getPlots(mapId: number | null = null) : {id: string, knotsByPhysical: any, originalGrammar: IPlotGrammar, grammar: IPlotGrammar, position: IComponentPosition | undefined, componentId: string}[] {
         let plots: {id: string, knotsByPhysical: any, originalGrammar: IPlotGrammar, grammar: IPlotGrammar, position: IComponentPosition | undefined, componentId: string}[] = [];
         let map_component: any = null;
-        let currentMapId = 0;
+        let currentComponentId = 0;
 
         for(const component of this._components_grammar){
             if(component.grammar != undefined && component.grammar.grammar_type == GrammarType.PLOT){
@@ -766,12 +776,13 @@ class GrammarInterpreter {
             }
 
             if(component.grammar != undefined && mapId != null && component.grammar.grammar_type == GrammarType.MAP){
-                if(currentMapId == mapId){
+                if(currentComponentId == mapId){
                     map_component = component;
                 }
 
-                currentMapId += 1;
             }
+
+            currentComponentId += 1;
         }
 
         if(mapId != null && map_component != null){
@@ -810,16 +821,16 @@ class GrammarInterpreter {
     }
 
     public getMap(mapId: number = 0){
-        let currentMapId = 0;
+        let currentComponentId = 0;
 
         for(const component of this._components_grammar){
             if(component.grammar != undefined && component.grammar.grammar_type == GrammarType.MAP){
-                if(currentMapId == mapId){
+                if(currentComponentId == mapId){
                     return (<IMapGrammar>component.grammar)
                 }
                 
-                currentMapId += 1;
             }
+            currentComponentId += 1;
         }
 
         throw new Error("There is no map with that id");
@@ -835,19 +846,17 @@ class GrammarInterpreter {
 
     public evaluateLayerVisibility(layerId: string, mapId:number): boolean{
 
-        let currentMapId = 0;
-
         let components_id = 0;
 
         for(const component of this._components_grammar){
             if(component.grammar != undefined && component.grammar.grammar_type == GrammarType.MAP){
-                if(currentMapId == mapId){
+                if(components_id == mapId){
                 
                     if((<IMapGrammar>component.grammar).knotVisibility == undefined)
                         return true;
             
-                    let map: any = MapViewFactory.getInstance(this, this._layerManager, this._knotManager, components_id); // TODO: suppor the use of multiple maps
-            
+                    let map = this._components[components_id].obj;
+
                     let zoom = map.camera.getZoomLevel();
                     let timeElapsed = Date.now() - this._lastValidationTimestep;
             
@@ -888,8 +897,6 @@ class GrammarInterpreter {
                 
                 
                 }
-                
-                currentMapId += 1;
             }
 
             components_id += 1;
@@ -901,18 +908,16 @@ class GrammarInterpreter {
 
     public evaluateKnotVisibility(knot: Knot, mapId:number): boolean{
 
-        let currentMapId = 0;
-
         let components_id = 0;
 
         for(const component of this._components_grammar){
             if(component.grammar != undefined && component.grammar.grammar_type == GrammarType.MAP){
-                if(currentMapId == mapId){
+                if(components_id == mapId){
         
                     if((<IMapGrammar>component.grammar).knotVisibility != undefined && component.grammar.knots.includes(knot.id)){
-
-                        let map: any = MapViewFactory.getInstance(this, this._layerManager, this._knotManager, components_id); // TODO: suppor the use of multiple maps
                 
+                        let map = this._components[components_id].obj;
+
                         let zoom = map.camera.getZoomLevel();
                         let timeElapsed = Date.now() - this._lastValidationTimestep;
                 
@@ -942,8 +947,6 @@ class GrammarInterpreter {
                     }   
 
                 }
-
-                currentMapId += 1;
             }
 
             components_id += 1;
@@ -1073,7 +1076,8 @@ class GrammarInterpreter {
                     let coordinates: number[][] = [];
 
                     if(viewId != null){
-                        let map = MapViewFactory.getInstance(this, this._layerManager, this._knotManager, viewId);
+                        let map = this._components[viewId].obj;
+
                         if(!Environment.serverless)
                             coordinates = left_layer.getCoordsByLevel((<ILinkDescription>lastLink).out.level, map.camera.getWorldOrigin(), viewId);
                         else
@@ -1176,18 +1180,22 @@ class GrammarInterpreter {
     private renderViews(mainDiv: HTMLElement, grammar: IMasterGrammar){
         // mainDiv.innerHTML = ""; // empty all content
 
+        // if(this._root == undefined){
+        //     this._root = createRoot(mainDiv);
+        // }else{
+        //     this._root.unmount();
+        //     mainDiv.innerHTML = "";
+        //     this._root = createRoot(mainDiv);
+        // }
+        
         if(this._root == undefined){
-            this._root = createRoot(mainDiv);
-        }else{
-            this._root.unmount();
-            mainDiv.innerHTML = "";
             this._root = createRoot(mainDiv);
         }
 
         let viewIds: string[] = [];
 
         for(let i = 0; i < this._components.length; i++){
-            viewIds.push(this._components[i].type+i);
+            viewIds.push(this._components[i].type+i+"_"+this._id);
         }
 
         // for(let i = 0; i < this._maps_widgets.length; i++){
@@ -1205,18 +1213,3 @@ class GrammarInterpreter {
     }
 
 }
-
-export var GrammarInterpreterFactory = (function(){
-
-    var instance: GrammarInterpreter;
-  
-    return {
-      getInstance: function(){
-          if (instance == null) {
-              instance = new GrammarInterpreter();
-          }
-          return instance;
-      }
-    };
-  
-})();

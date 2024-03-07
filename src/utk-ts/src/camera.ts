@@ -4,7 +4,7 @@ import { vec2, vec3, mat4 } from 'gl-matrix';
 /**
  * 3D Camera representation
  */
-class Camera {
+export class Camera {
     // View parameters
     protected wOrigin: vec2 = vec2.create();
     protected wEye: vec3 = vec3.create();
@@ -29,6 +29,10 @@ class Camera {
     // view resolution
     private viewportWidth: number;
     private viewportHeight: number;
+
+    constructor(initialPosition: number[], wUp: number[], wLookAt: number[], wEye: number[], updateStatusCallback: any){
+        this.resetCamera(initialPosition, wUp, wLookAt, wEye, updateStatusCallback);
+    }
 
     resetCamera(initialPosition: number[], wUp: number[], wLookAt: number[], wEye: number[], updateStatusCallback: any): void{
         this.wEyeDir = vec3.create();
@@ -258,17 +262,17 @@ class Camera {
     }
 }
 
-export var CameraFactory = (function(){
+// export var CameraFactory = (function(){
 
-    var instance: Camera;
+//     var instance: Camera;
   
-    return {
-      getInstance: function(){
-          if (instance == null) {
-              instance = new Camera();
-          }
-          return instance;
-      }
-    };
+//     return {
+//       getInstance: function(){
+//           if (instance == null) {
+//               instance = new Camera();
+//           }
+//           return instance;
+//       }
+//     };
   
-})();
+// })();

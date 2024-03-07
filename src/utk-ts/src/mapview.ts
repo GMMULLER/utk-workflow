@@ -1,29 +1,27 @@
 /// <reference types="@types/webgl2" />
 
-import { CameraFactory } from './camera';
-import { Layer } from './layer';
+import { Camera } from './camera';
 
 import { MapStyle } from './map-style';
 
-import { KeyEventsFactory } from './key-events';
-import { MouseEventsFactory } from './mouse-events';
+import { KeyEvents } from './key-events';
+import { MouseEvents } from './mouse-events';
 
 import { DataApi } from './data-api';
 import { LayerManager } from './layer-manager';
 
-import { ICameraData, IExKnot, IKnot, ILayerData, ILinkDescription, IMasterGrammar } from './interfaces';
+import { ICameraData, IExKnot, IKnot, ILinkDescription, IMapGrammar } from './interfaces';
 
-import { LevelType, PlotArrangementType } from './constants';
+import { LevelType } from './constants';
 
 import { ShaderPicking } from "./shader-picking";
 import { ShaderPickingTriangles } from "./shader-picking-triangles";
 
 import { PlotManager } from "./plot-manager";
 import { KnotManager } from './knot-manager';
-import { Knot } from './knot';
 import { Environment } from './environment';
 
-class MapView {
+export class MapView {
     // Html div that will host the map
     protected _mapDiv: HTMLElement;
     // Html canvas used to draw the map
@@ -56,16 +54,26 @@ class MapView {
     protected _linkedKnots: Set<string>;
 
     public _viewId: number; // the view to which this map belongs
+    public _mapGrammar: IMapGrammar;
 
-    resetMap(grammarInterpreter: any, layerManager: LayerManager, knotManager: KnotManager, viewId:number): void {
+    constructor(grammarInterpreter: any, layerManager: LayerManager, knotManager: KnotManager, viewId:number, mapGrammar: IMapGrammar){
+        this.resetMap(grammarInterpreter, layerManager, knotManager, viewId, mapGrammar);
+    }
+
+    resetMap(grammarInterpreter: any, layerManager: LayerManager, knotManager: KnotManager, viewId:number, mapGrammar: IMapGrammar): void {
         this._grammarInterpreter = grammarInterpreter;
         this._layerManager = layerManager;
         this._knotManager = knotManager;
         this._viewId = viewId;
+        this._mapGrammar = mapGrammar;
     }
 
     get layerManager(): LayerManager {
         return this._layerManager;
+    }
+
+    get mapGrammar(): IMapGrammar{
+        return this._mapGrammar;
     }
 
     get knotManager(): KnotManager{
@@ -137,7 +145,7 @@ class MapView {
 
         this._mapDiv = mapDiv;
         this._canvas = document.createElement('canvas');
-        this._canvas.id = mapDiv.id+"_mapCanvas";
+        this._canvas.id = mapDiv.id+"_mapCanvas_"+this._grammarInterpreter.id;
         this._canvas.className = "mapView";
         this._glContext = <WebGL2RenderingContext>this._canvas.getContext('webgl2', {preserveDrawingBuffer: true, stencil: true}); // preserve drawing buffer is used to generate valid blobs for the cave
         this._mapDiv.appendChild(this._canvas);
@@ -160,47 +168,6 @@ class MapView {
 
         // resizes the canvas
         this.resize();
-
-        // await this.initLayers();
-        
-        // this.initKnots();
-
-        // let knotsGroups: any = {};
-
-        // for(const knot of this._knotManager.knots){
-            
-        //     let knotSpecification = knot.knotSpecification;
-            
-        //     if(knotSpecification.group != undefined){
-        //         if(!(knotSpecification.group.group_name in knotsGroups)){
-        //             knotsGroups[knotSpecification.group.group_name] = [{
-        //                 id: knot.id,
-        //                 position: knotSpecification.group.position
-        //             }];
-        //         }else{
-        //             knotsGroups[knotSpecification.group.group_name].push({
-        //                 id: knot.id,
-        //                 position: knotSpecification.group.position
-        //             });
-        //         }
-        //     }else{
-        //         knotsGroups[knot.id] = [knot.id]; // group of single knot
-        //     }
-            
-        // }
-
-        // for(const group of Object.keys(knotsGroups)){
-        //     if(knotsGroups[group].length > 1){
-        //         knotsGroups[group].sort((a: any,b: any) => {a.position - b.position});
-        //         let ids = [];
-        //         for(const element of knotsGroups[group]){
-        //             ids.push(element.id);
-        //         }
-        //         knotsGroups[group] = ids;
-        //     }
-        // }
-        
-        // this._updateStatusCallback("listLayers", knotsGroups);
 
         this.initPlotManager();
 
@@ -337,8 +304,7 @@ class MapView {
         const params = typeof camera === 'string' ? await DataApi.getCameraParameters(camera, this._grammarInterpreter.serverlessApi) : camera;
 
         // sets the camera
-        this._camera = CameraFactory.getInstance();
-        this._camera.resetCamera(params.position, params.direction.up, params.direction.lookAt, params.direction.right, this._updateStatusCallback);
+        this._camera = new Camera(params.position, params.direction.up, params.direction.lookAt, params.direction.right, this._updateStatusCallback);
     }
 
     /**
@@ -346,7 +312,7 @@ class MapView {
      */
     initMouseEvents(): void {
         // creates the mouse events manager
-        this._mouse = MouseEventsFactory.getInstance();
+        this._mouse = new MouseEvents();
         this._mouse.setMap(this);
 
         // binds the mouse events
@@ -358,8 +324,10 @@ class MapView {
      */
     initKeyboardEvents(): void {
         // creates the mouse events manager
-        this._keyboard = KeyEventsFactory.getInstance();
+        this._keyboard = new KeyEvents();
         this._keyboard.setMap(this);
+
+        this._keyboard.bindEvents();
     }
 
     public setCamera(camera: {position: number[], direction: {right: number[], lookAt: number[], up: number[]}}): void{
@@ -478,51 +446,6 @@ class MapView {
                 }
             }
         }
-
-        // this.render();   
-
-        // ============================
-
-        // const targetWidth = this._mapDiv.clientWidth;
-        // const targetHeight = this._mapDiv.clientHeight;
-
-        // // const value = Math.max(targetWidth, targetHeight);
-        // // this._glContext.viewport(0, 0, value, value);
-
-        // this._glContext.viewport(0, 0, targetWidth, targetHeight);
-        // this._canvas.width = targetWidth;
-        // this._canvas.height = targetHeight;
-
-        // // stores in the camera
-        // this._camera.setViewportResolution(targetWidth, targetHeight);
-
-        // for (const knot of this._knotManager.knots){
-        //     if (!knot.visible) { continue; }
-
-        //     for(const shader of knot.shaders[this._viewId]){
-        //         if(shader instanceof ShaderPicking || shader instanceof ShaderPickingTriangles){
-        //             shader.resizeDirty = true;
-        //         }
-        //     }
-        // }
-
-        // this.render();            
+           
     }
 }
-
-export var MapViewFactory = (function(){
-
-    var instance: MapView;
-  
-    return {
-      getInstance: function(grammarInterpreter: any, layerManager: any, knotManager: any, viewId: number){
-          if (instance == null) {
-              instance = new MapView();
-          }
-
-          instance.resetMap(grammarInterpreter, layerManager, knotManager, viewId);
-          return instance;
-      }
-    };
-  
-})();

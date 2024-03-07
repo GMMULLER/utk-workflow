@@ -3,7 +3,7 @@ import React, {useEffect} from 'react';
 // css file
 import './App.css';
 
-import {Environment, DataLoader, GrammarInterpreterFactory} from 'utk';
+import {Environment, DataLoader, GrammarInterpreter} from 'utk';
 import 'utk/style.css'
 
 import $ from 'jquery';
@@ -23,14 +23,12 @@ class Initializer {
   constructor(mainDiv: any) {
 
     this._mainDiv = document.querySelector(mainDiv);
-
-    this._grammarInterpreter = GrammarInterpreterFactory.getInstance();
   }
 
   run(data:any) {
 
-    this._grammarInterpreter.resetGrammarInterpreter(data, this._mainDiv);
-    
+    this._grammarInterpreter = new GrammarInterpreter("mainInterpreter", data, this._mainDiv)
+
     // cave connection
     // initializeConnection(this._map); // TODO: enable CAVE connection
   }

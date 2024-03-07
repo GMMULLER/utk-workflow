@@ -3,7 +3,7 @@ import React, {useEffect} from 'react';
 // css file
 import './Map.css';
 
-import {Environment, DataLoader, GrammarInterpreterFactory} from 'utk';
+import {Environment, DataLoader, GrammarInterpreter} from 'utk';
 import $ from 'jquery';
 
 let initializer: any;
@@ -17,15 +17,12 @@ class Initializer {
 
     this._mainDiv = document.querySelector(mainDiv);
 
-    this._grammarInterpreter = GrammarInterpreterFactory.getInstance();
+    
   }
 
   run(data:any) {
-
-    this._grammarInterpreter.resetGrammarInterpreter(data, this._mainDiv);
-  
+    this._grammarInterpreter = new GrammarInterpreter("mainInterpreter", data, this._mainDiv);
   }
-
 
 }
 
