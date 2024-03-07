@@ -51,6 +51,7 @@ export class ShaderSmoothColorMap extends AuxiliaryShaderTriangles {
     protected _functionDirty: boolean = false;
     protected _colorMapDirty: boolean = false;
     protected _colorOrPickedDirty: boolean = false;
+    protected _overwriteDirty: boolean = false;
     protected _filteredDirty: boolean = false;
 
     // Id of each property in the VAO
@@ -294,8 +295,9 @@ export class ShaderSmoothColorMap extends AuxiliaryShaderTriangles {
         glContext.bindBuffer(glContext.ARRAY_BUFFER, this._glColorOrPicked);
         if (this._colorOrPickedDirty) {
             
-            if(Environment.serverless)
+            if(Environment.serverless && !this._overwriteDirty){
                 this.exportInteractions(this._colorOrPicked, this._coordsPerComp, this._currentKnot.id);
+            }
 
             glContext.bufferData(
                 glContext.ARRAY_BUFFER, new Float32Array(this._colorOrPicked), glContext.STATIC_DRAW
@@ -350,6 +352,7 @@ export class ShaderSmoothColorMap extends AuxiliaryShaderTriangles {
         this._coordsDirty = false;
         this._functionDirty = false;
         this._colorOrPickedDirty = false;
+        this._overwriteDirty = false;
         this._filteredDirty = false;
     }
 
@@ -367,6 +370,7 @@ export class ShaderSmoothColorMap extends AuxiliaryShaderTriangles {
         }
 
         this._colorOrPickedDirty = true;
+        this._overwriteDirty = true;
     }
 
     public setHighlightElements(coordinates: number[], value: boolean): void {

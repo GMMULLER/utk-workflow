@@ -119,7 +119,6 @@ export class Knot {
                 shader.overwriteSelectedElements(externalSelected);
             }
         }
-        // if()
 
     }
 
