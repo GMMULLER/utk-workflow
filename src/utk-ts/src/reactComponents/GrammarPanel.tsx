@@ -242,15 +242,6 @@ export const GrammarPanelContainer = ({
         });
     }
 
-    // useEffect(() => {
-    //     console.log("i am being called");
-    //     if(grammarStateRef.current != "") {
-    //         console.log("my own label", grammarStateRef.current)
-    //         obj.processGrammar(JSON.parse(grammarStateRef.current));
-    //         applyGrammar();
-    //     }
-    // }, [grammarStateRef.current]);
-
     // run only once to load the initial data
     useEffect(() => {
         GrammarMethods.subscribe("GrammarPanel", (new_grammar: Object) => { 

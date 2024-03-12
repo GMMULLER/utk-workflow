@@ -27,7 +27,6 @@ const ScatterPanel = ({ fields, data, setScatter } : ScatterPanelProps) => {
     setAxis({ axis: ax.axis, label: fld.nick})
   }
   
-  console.log("scatter panel", data)
   const scatter: VisualizationSpec = {
     "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
     // "data": {"url": "https://raw.githubusercontent.com/vega/vega/main/docs/data/cars.json"},
