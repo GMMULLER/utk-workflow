@@ -345,6 +345,7 @@ class OSM:
         result_gdf_objects = []
         result_gdf_coordinates = []
         result_gdf_coordinates_3d = []
+        result_gdf_perSection = [] # for 3D buildings. Each row represents a section of the building
         ttype = ''
         styleKey = ''
         renderStyle = []
@@ -390,6 +391,7 @@ class OSM:
                 result_gdf_objects.append(layer_geometry['gdf']['objects'])
                 result_gdf_coordinates.append(layer_geometry['gdf']['coordinates'])
                 result_gdf_coordinates_3d.append(layer_geometry['gdf']['coordinates3d'])
+                result_gdf_perSection.append(layer_geometry['perSectionGdf'])
                 ttype = 'BUILDINGS_LAYER'
                 styleKey = 'building'
                 renderStyle = ['SMOOTH_COLOR_MAP_TEX']
@@ -423,7 +425,7 @@ class OSM:
 
             result.append({'id': layer, 'type': ttype, 'renderStyle': renderStyle, 'styleKey': styleKey, 'data': geometry})
         
-        return {'json': result, 'gdf': {'objects': result_gdf_objects, 'coordinates': result_gdf_coordinates, 'coordinates3d': result_gdf_coordinates_3d}}
+        return {'json': result, 'gdf': {'sections': result_gdf_perSection, 'objects': result_gdf_objects, 'coordinates': result_gdf_coordinates, 'coordinates3d': result_gdf_coordinates_3d}}
 
     def osm_to_roads_polyline(osm_elements, bpoly, bbox):
         '''
@@ -940,15 +942,20 @@ class OSM:
         gdf = gdf.set_index('building_id', drop=False)
         gdf = gdf.sort_index()
 
+        return OSM.mesh_from_buildings_gdf(gdf, sizeCells)
+
+    def mesh_from_buildings_gdf(gdf, sizeCells):
+
         gdf_merged_buildings = Buildings.merge_overlapping_buildings(gdf)
 
         layer_dataframes = Buildings.generate_building_layer(gdf_merged_buildings, sizeCells) #gdf, size
 
         df_mesh = layer_dataframes['df']
 
-        json_mesh = Buildings.df_to_json(df_mesh) # prepares the layer   
+        json_mesh = Buildings.df_to_json(df_mesh) # prepares the layer  
 
-        return {"data": json_mesh['data'], "gdf": {'objects': layer_dataframes['gdf']['objects'], 'coordinates': layer_dataframes['gdf']['coordinates'], "coordinates3d": layer_dataframes['gdf']['coordinates3d']}}
+        return {"data": json_mesh['data'], "perSectionGdf": gdf, "gdf": {'objects': layer_dataframes['gdf']['objects'], 'coordinates': layer_dataframes['gdf']['coordinates'], "coordinates3d": layer_dataframes['gdf']['coordinates3d']}}
+
 
     def osm_to_generic_mesh(osm_elements, bpoly, bbox, convert2dto3d=False):
         '''
