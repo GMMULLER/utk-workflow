@@ -942,13 +942,13 @@ class OSM:
         gdf = gdf.set_index('building_id', drop=False)
         gdf = gdf.sort_index()
 
-        return OSM.mesh_from_buildings_gdf(gdf, sizeCells)
+        gdf_merged_buildings = Buildings.merge_overlapping_buildings(gdf)
+
+        return OSM.mesh_from_buildings_gdf(gdf_merged_buildings, sizeCells)
 
     def mesh_from_buildings_gdf(gdf, sizeCells):
 
-        gdf_merged_buildings = Buildings.merge_overlapping_buildings(gdf)
-
-        layer_dataframes = Buildings.generate_building_layer(gdf_merged_buildings, sizeCells) #gdf, size
+        layer_dataframes = Buildings.generate_building_layer(gdf, sizeCells) #gdf, size
 
         df_mesh = layer_dataframes['df']
 

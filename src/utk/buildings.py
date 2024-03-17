@@ -621,7 +621,8 @@ class Buildings:
         # pointsPerSection = []
         unique_buildings = gdf.index.unique()
 
-        for i in trange(len(unique_buildings)):
+        # for i in trange(len(unique_buildings)):
+        for i in range(len(unique_buildings)):
             building_id = unique_buildings[i]
             building = gdf.loc[[building_id]]
             # coord, ind, iids, cols, sectionHeight, sectionMinHeight, orientedEnvelope, sectionFootprint, corners, width, surfaceHeight, pointsSection = Buildings.create_building_mesh(building, size)
