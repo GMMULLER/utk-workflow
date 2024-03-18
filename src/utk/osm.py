@@ -948,6 +948,9 @@ class OSM:
 
     def mesh_from_buildings_gdf(gdf, sizeCells):
 
+        gdf = gdf.set_index('building_id', drop=False)
+        gdf = gdf.sort_index()
+
         layer_dataframes = Buildings.generate_building_layer(gdf, sizeCells) #gdf, size
 
         df_mesh = layer_dataframes['df']

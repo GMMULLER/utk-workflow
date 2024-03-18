@@ -704,7 +704,7 @@ class Buildings:
         df_3d_coordinates = pd.DataFrame({'geometry': tridimensional_coordinates, 'id': ids_tridimensional_coordinates})
 
         df = df.set_index('building_id', drop=False)
-        df = df.sort_index()
+        # df = df.sort_index()
 
         return {"df": df, "gdf": {"objects": gdf, "coordinates": gdf_coordinates, "coordinates3d": df_3d_coordinates}}
 
