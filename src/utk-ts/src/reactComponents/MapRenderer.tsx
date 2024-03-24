@@ -28,7 +28,7 @@ export const MapRendererContainer = ({obj, viewId, mapWidgets, x, y, width, heig
     return(
       <React.Fragment>
         <div style={{padding: 0, width: "100%", height: "100%"}}>
-          <div id={viewId} className="mapView">
+          <div id={viewId} className="mapView" style={{width: "100%", height: "100%"}}>
           </div>
           <div id='svg_div'>
             <svg id='svg_element' xmlns="http://www.w3.org/2000/svg" style={{"display": "none"}}>

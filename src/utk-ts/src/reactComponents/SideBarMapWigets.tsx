@@ -9,6 +9,7 @@ import { faLayerGroup, faChartSimple, faEyeSlash, faSearch, faEye, faCode } from
 import * as d3 from "d3";
 import { InteractionChannel } from "../interaction-channel";
 import { ColorScaleContainer } from './ColorScale';
+import { Environment } from "../environment";
 
 type SideBarMapWidgetsProps = {
     x: number,
@@ -126,17 +127,18 @@ export const SideBarMapWidgets = ({x, y, mapWidth, mapHeight, listLayers, knotVi
               {/* {genericPlots.filter((plot: any) => {return plot.floating;}).length > 0 ? <FontAwesomeIcon size="2x" style={{color: "#696969", padding: 0, marginTop: "5px", marginBottom: "5px"}} icon={faChartSimple} onClick={handleTogglePlots} /> : null} */}
             </Row>
           </div> : null}
-          <div style={{ backgroundColor: "white", width: "75px", position: "absolute", right: "10px", bottom: "10px", padding: "5px", borderRadius: "8px", border: "1px solid #dadce0", opacity: 0.9, boxShadow: "0 2px 8px 0 rgba(99,99,99,.2)" }}>
+          {!Environment.serverless ? <div style={{ backgroundColor: "white", width: "75px", position: "absolute", right: "10px", bottom: "10px", padding: "5px", borderRadius: "8px", border: "1px solid #dadce0", opacity: 0.9, boxShadow: "0 2px 8px 0 rgba(99,99,99,.2)" }}>
               <Row>
                   <FontAwesomeIcon size="2x" style={{ color: "#696969", padding: 0, marginTop: "5px", marginBottom: "5px" }} icon={faCode} onClick={() => editGrammar(componentId, GrammarType.MAP)} />
                   {/* {genericPlots.filter((plot: any) => {return plot.floating;}).length > 0 ? <FontAwesomeIcon size="2x" style={{color: "#696969", padding: 0, marginTop: "5px", marginBottom: "5px"}} icon={faChartSimple} onClick={handleTogglePlots} /> : null} */}
               </Row>
-          </div>
+          </div> : null}
+
             {
               mapWidgets.map((component, index) => {
                 if(component.type == WidgetType.TOGGLE_KNOT){
                   return <React.Fragment key={"toggle_knot_"+index}>
-                    <div className='component' id="toggle_knot_widget" style={{position: "absolute", right: 100, top: 10, width: 760, borderRadius: "8px", border: "1px solid #dadce0", opacity: 0.9, boxShadow: "0 2px 8px 0 rgba(99,99,99,.2)", display: "none"}}>
+                    <div className='component' id="toggle_knot_widget" style={{position: "absolute", right: 100, top: 10, width: "50%", borderRadius: "8px", border: "1px solid #dadce0", opacity: 0.9, boxShadow: "0 2px 8px 0 rgba(99,99,99,.2)", display: "none"}}>
                       <ToggleKnotsWidget
                         obj = {component.obj}
                         listLayers = {listLayers}

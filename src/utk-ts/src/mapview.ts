@@ -419,8 +419,11 @@ export class MapView {
     resize(): void {
 
         // Lookup the size the browser is displaying the canvas in CSS pixels.
-        const displayWidth = this._canvas.clientWidth;
-        const displayHeight = this._canvas.clientHeight;
+        // const displayWidth = this._canvas.clientWidth;
+        // const displayHeight = this._canvas.clientHeight;
+
+        const displayWidth = this._mapDiv.clientWidth;
+        const displayHeight = this._mapDiv.clientHeight;
 
         // Check if the canvas is not the same size.
         const needResize = this._canvas.width  !== displayWidth ||

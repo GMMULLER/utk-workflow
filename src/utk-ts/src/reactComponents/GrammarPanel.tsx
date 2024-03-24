@@ -392,11 +392,13 @@ export const GrammarPanelContainer = ({
                 <input name="linkMapAndGrammar" type="checkbox" id={linkMapAndGrammarId} style={{marginRight: "5px"}}></input>
                 <label htmlFor="linkMapAndGrammar">Link</label>
             </div>
-            <div style={{ zIndex: 5, backgroundColor: "white", width: "75px", position: "absolute", right: "10px", bottom: "10px", padding: "5px", borderRadius: "8px", border: "1px solid #dadce0", opacity: 0.9, boxShadow: "0 2px 8px 0 rgba(99,99,99,.2)" }}>
-                <Row>
-                    <FontAwesomeIcon size="2x" style={{ color: "#696969", padding: 0, marginTop: "5px", marginBottom: "5px" }} icon={faCode} onClick={() => editGrammar("grammar", GrammarType.MASTER)} />
-                </Row>
-            </div>  
+            {
+                !Environment.serverless ? <div style={{ zIndex: 5, backgroundColor: "white", width: "75px", position: "absolute", right: "10px", bottom: "10px", padding: "5px", borderRadius: "8px", border: "1px solid #dadce0", opacity: 0.9, boxShadow: "0 2px 8px 0 rgba(99,99,99,.2)" }}>
+                    <Row>
+                        <FontAwesomeIcon size="2x" style={{ color: "#696969", padding: 0, marginTop: "5px", marginBottom: "5px" }} icon={faCode} onClick={() => editGrammar("grammar", GrammarType.MASTER)} />
+                    </Row>
+                </div> : null
+            }
         </React.Fragment>
     )
 }
