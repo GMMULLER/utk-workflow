@@ -23,7 +23,7 @@ class ShadowAccumulator:
         Calculate shadow accumulation considering meshes stored in json files.
     '''
 
-    filespaths = []
+    data = []
     # start = None
     # end = None
     intervals = [] # list of lists containing different time intervals
@@ -41,7 +41,7 @@ class ShadowAccumulator:
     longitude = 0
     result_to_write = {} # the result that will be outputed in the files (groupped by interval index)
 
-    def __init__(self, latitude, longitude, filespaths, intervals):
+    def __init__(self, latitude, longitude, data, intervals):
 
         '''
             All meshes must be 3D
@@ -57,7 +57,7 @@ class ShadowAccumulator:
 
             self.intervals.append([start, end])
 
-        self.filespaths = filespaths
+        self.data = data
         # self.start = datetime.strptime(start, "%m/%d/%Y %H:%M")
         # self.end = datetime.strptime(end, "%m/%d/%Y %H:%M")
 
@@ -283,9 +283,17 @@ class ShadowAccumulator:
 
             for index, geometries_count in enumerate(self.coords_per_file):
                 
-                fileName = os.path.splitext(os.path.basename(self.filespaths[index]))[0]
+                fileName = ""
 
-                directory = os.path.dirname(self.filespaths[index])
+                if(type(self.data[index]) == str): # file path
+                    fileName = os.path.splitext(os.path.basename(self.data[index]))[0]
+                else: # the raw data
+                    fileName = self.data[index]["id"]
+
+                directory = "./"
+
+                if(type(self.data[index]) == str): # file path
+                    directory = os.path.dirname(self.data[index])
 
                 function_values_this_file = []
                 flat_coords_this_file = []
@@ -303,6 +311,53 @@ class ShadowAccumulator:
 
                 with open(os.path.join(directory, "shadow"+str(function_index)+'_'+fileName+".json"), "w") as outfile:
                     json.dump(shadow_layer, outfile)
+
+    # returns a dictionary with shadow values separated by layers and groupped by object
+    def get_shadow_by_layer(self):
+        
+        returned_dict = {}
+
+        for index in range(len(self.intervals)):
+
+            accumulation = self.result_to_write[index] # shadow data accumulated per coordinates
+            function_index = index
+
+            # function values are the normalized accumulation values ([0,1]) that are used by the shader of utk-map to color the cells
+            if(max(accumulation) != 0):
+                function_values = accumulation/max(accumulation)
+            else:
+                function_values = accumulation
+
+            function_values = function_values.tolist()
+
+            flat_coords = self.flat_coords.copy()
+
+            for index, geometries_count in enumerate(self.coords_per_file):
+                
+                fileName = ""
+
+                if(type(self.data[index]) == str): # file path
+                    raise Exception("get_shadow_by_layer can only be used when raw data and not filepaths are provided")
+                else: # the raw data
+                    fileName = self.data[index]["id"]
+
+                function_values_this_file = []
+                coords_this_file = []
+
+                for geometry_count in geometries_count:
+
+                    function_values_this_file.append([round(item, 4) for item in function_values[:geometry_count]])
+
+                    coords_this_file.append(flat_coords[:geometry_count*3])
+
+                    flat_coords = flat_coords[geometry_count*3:] # remove the values that belong to the current mesh
+                    function_values = function_values[geometry_count:] # remove the values that belong to the current mesh
+
+                shadow_layer = {'id': "shadow"+str(function_index)+'_'+fileName, 'coordinates': coords_this_file, 'values': function_values_this_file}
+
+                returned_dict["shadow"+str(function_index)+'_'+fileName] = shadow_layer
+        
+        return returned_dict
 
     def accumulate_shadow(self):
         '''
@@ -339,84 +394,93 @@ class ShadowAccumulator:
 
     def load_files(self):
 
-        for filepath in self.filespaths:
+        for value in self.data:
 
-            file = open(filepath, mode='r')
-            file_content = json.loads(file.read())
+            file_content = {}
 
-            directory = os.path.dirname(filepath)
-            # file name with extension
-            file_name = os.path.basename(filepath)
-            # file name without extension
-            file_name_wo_extension = os.path.splitext(file_name)[0]
+            if(type(value) == str): # filepath
+                filepath = value
 
-            coordinates = []
-            normals = []
-            indices = []
-            ids = []
+                file = open(filepath, mode='r')
+                file_content = json.loads(file.read())
 
-            if('coordinates' in file_content['data'][0]['geometry']):
-                f = open(os.path.join(directory,file_name_wo_extension+'_coordinates.data'), "rb")
+                directory = os.path.dirname(filepath)
+                # file name with extension
+                file_name = os.path.basename(filepath)
+                # file name without extension
+                file_name_wo_extension = os.path.splitext(file_name)[0]
 
-                data = f.read()
+                coordinates = []
+                normals = []
+                indices = []
+                ids = []
 
-                unpacked_data = struct.iter_unpack('d', data)
+                if('coordinates' in file_content['data'][0]['geometry']):
+                    f = open(os.path.join(directory,file_name_wo_extension+'_coordinates.data'), "rb")
 
-                for elem in unpacked_data:
-                    coordinates.append(elem[0])
+                    data = f.read()
 
-                f.close()
-            if('normals' in file_content['data'][0]['geometry']):
-                f = open(os.path.join(directory,file_name_wo_extension+'_normals.data'), "rb")
+                    unpacked_data = struct.iter_unpack('d', data)
 
-                data = f.read()
+                    for elem in unpacked_data:
+                        coordinates.append(elem[0])
 
-                unpacked_data = struct.iter_unpack('f', data)
+                    f.close()
+                if('normals' in file_content['data'][0]['geometry']):
+                    f = open(os.path.join(directory,file_name_wo_extension+'_normals.data'), "rb")
 
-                for elem in unpacked_data:
-                    normals.append(elem[0])
+                    data = f.read()
 
-                f.close()
-            if('indices' in file_content['data'][0]['geometry']):
-                f = open(os.path.join(directory,file_name_wo_extension+'_indices.data'), "rb")
+                    unpacked_data = struct.iter_unpack('f', data)
 
-                data = f.read()
+                    for elem in unpacked_data:
+                        normals.append(elem[0])
 
-                unpacked_data = struct.iter_unpack('I', data)
+                    f.close()
+                if('indices' in file_content['data'][0]['geometry']):
+                    f = open(os.path.join(directory,file_name_wo_extension+'_indices.data'), "rb")
 
-                for elem in unpacked_data:
-                    indices.append(elem[0])
+                    data = f.read()
 
-                f.close()
-            if('ids' in file_content['data'][0]['geometry']):
-                f = open(os.path.join(directory,file_name_wo_extension+'_ids.data'), "rb")
+                    unpacked_data = struct.iter_unpack('I', data)
 
-                data = f.read()
+                    for elem in unpacked_data:
+                        indices.append(elem[0])
 
-                unpacked_data = struct.iter_unpack('I', data)
+                    f.close()
+                if('ids' in file_content['data'][0]['geometry']):
+                    f = open(os.path.join(directory,file_name_wo_extension+'_ids.data'), "rb")
 
-                for elem in unpacked_data:
-                    ids.append(elem[0])
+                    data = f.read()
 
-                f.close()
+                    unpacked_data = struct.iter_unpack('I', data)
 
-            for i in range(len(file_content['data'])):
+                    for elem in unpacked_data:
+                        ids.append(elem[0])
 
-                if(len(coordinates) > 0):
-                    startAndSize = file_content['data'][i]['geometry']['coordinates']
-                    file_content['data'][i]['geometry']['coordinates'] = coordinates[startAndSize[0]:startAndSize[0]+startAndSize[1]]
+                    f.close()
 
-                if(len(indices) > 0):
-                    startAndSize = file_content['data'][i]['geometry']['indices']
-                    file_content['data'][i]['geometry']['indices'] = indices[startAndSize[0]:startAndSize[0]+startAndSize[1]]
+                for i in range(len(file_content['data'])):
 
-                if(len(normals) > 0):
-                    startAndSize = file_content['data'][i]['geometry']['normals']
-                    file_content['data'][i]['geometry']['normals'] = normals[startAndSize[0]:startAndSize[0]+startAndSize[1]]
+                    if(len(coordinates) > 0):
+                        startAndSize = file_content['data'][i]['geometry']['coordinates']
+                        file_content['data'][i]['geometry']['coordinates'] = coordinates[startAndSize[0]:startAndSize[0]+startAndSize[1]]
 
-                if(len(ids) > 0):
-                    startAndSize = file_content['data'][i]['geometry']['ids']
-                    file_content['data'][i]['geometry']['ids'] = ids[startAndSize[0]:startAndSize[0]+startAndSize[1]]
+                    if(len(indices) > 0):
+                        startAndSize = file_content['data'][i]['geometry']['indices']
+                        file_content['data'][i]['geometry']['indices'] = indices[startAndSize[0]:startAndSize[0]+startAndSize[1]]
+
+                    if(len(normals) > 0):
+                        startAndSize = file_content['data'][i]['geometry']['normals']
+                        file_content['data'][i]['geometry']['normals'] = normals[startAndSize[0]:startAndSize[0]+startAndSize[1]]
+
+                    if(len(ids) > 0):
+                        startAndSize = file_content['data'][i]['geometry']['ids']
+                        file_content['data'][i]['geometry']['ids'] = ids[startAndSize[0]:startAndSize[0]+startAndSize[1]]
+                
+                file.close()
+            else:
+                file_content = value
 
             file_coords = []
             file_indices = []
@@ -459,8 +523,6 @@ class ShadowAccumulator:
                 self.normals = np.copy(file_normals)
             else:
                 self.normals = np.concatenate((self.normals, file_normals), axis=0)
-
-            file.close()
 
         self.ids_per_structure = np.array(self.ids_per_structure)
 

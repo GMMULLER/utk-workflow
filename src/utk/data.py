@@ -11,16 +11,21 @@ except:
     import warnings
     warnings.warn("Skipping shadow_accumulator import.")
 
-
-
 # exposes simulations like .shadow
 # loads any kind of data the type is determined by the extension
-def shadow(filespaths, intervals):
+def shadow(data, intervals):
 
     coordinates = []
 
-    for filepath in filespaths:
-        layer_json = load_utk(filepath)
+    for value in data:
+
+        layer_json = {}
+
+        if(type(value) == str): # it is a filepath
+            layer_json = load_utk(value)
+        else:
+            layer_json = value
+
         coordinates += get_coordinates(layer_json)
 
     latitudes = []
@@ -33,7 +38,7 @@ def shadow(filespaths, intervals):
 
     centroid = convert_projections('3395', '4326', [(min(longitudes) + max(longitudes))/2, (min(latitudes) + max(latitudes))/2])
 
-    shadowAccumulator = ShadowAccumulator(centroid[1], centroid[0], filespaths, intervals)
+    shadowAccumulator = ShadowAccumulator(centroid[1], centroid[0], data, intervals)
     shadowAccumulator.accumulate_shadow()
 
     return shadowAccumulator
