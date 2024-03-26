@@ -189,7 +189,7 @@ class ShadowAccumulator:
 
             accumulation[:,0] = accumulation[:,0]+dist
 
-        # rt.close()
+        rt.close()
 
         return accumulation
 
