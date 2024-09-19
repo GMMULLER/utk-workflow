@@ -7,8 +7,6 @@ import commonjs from '@rollup/plugin-commonjs';
 import copy from 'rollup-plugin-copy'
 import css from "rollup-plugin-import-css";
 
-import * as meta from './package.json' assert {type: "json"};
-
 const config = [
   {
     input: "src/index.ts",
